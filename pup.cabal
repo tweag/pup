@@ -1,0 +1,28 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           pup
+version:        0.1.0
+author:         Mathieu Boespflug,
+                Arnaud Spiwack
+maintainer:     arnaud.spiwack@tweag.io
+copyright:      MIT
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+
+library
+  exposed-modules:
+      IndexedMonad
+      MonadicProfunctor
+  other-modules:
+      Paths_pup
+  hs-source-dirs:
+      src
+  ghc-options: -Wall
+  build-depends:
+      base
+  default-language: GHC2021
