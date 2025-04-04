@@ -16,13 +16,12 @@ build-type:     Simple
 
 library
   exposed-modules:
-      IndexedMonad
-      MonadicProfunctor
+    Control.Monad.Indexed
   other-modules:
-      Paths_pup
+    Paths_pup
   hs-source-dirs:
-      src
+    src
   ghc-options: -Wall
   build-depends:
-      base
+    base
   default-language: GHC2021
