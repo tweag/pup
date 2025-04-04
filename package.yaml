@@ -8,6 +8,7 @@ language: GHC2021
 
 dependencies:
   - base
+  - mtl
 
 library:
   source-dirs: src
