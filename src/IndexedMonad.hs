@@ -1,5 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 
 module IndexedMonad where
 
@@ -7,7 +7,7 @@ import Data.Char qualified as Char
 import Data.Coerce
 import Prelude hiding ((*>))
 
-data Print rf r r' a = Print { runPrint :: rf -> (a -> String -> rf -> r') -> r }
+data Print rf r r' a = Print {runPrint :: rf -> (a -> String -> rf -> r') -> r}
   deriving (Functor)
 
 pprint :: Print (Maybe String) r (Maybe String) a -> r
@@ -30,7 +30,7 @@ ff <*> aa = ff IndexedMonad.>>= \f -> aa IndexedMonad.>>= \a -> ppure (f a)
 
 (*>) :: Print rf r r' a -> Print rf r' r'' b -> Print rf r r'' b
 aa *> bb = (fmap (\_ -> id) aa) IndexedMonad.<*> bb
-    
+
 (>>=) :: Print rf r r' a -> (a -> Print rf r' r'' b) -> Print rf r r'' b
 (Print a) >>= kp = Print $ \fl k -> a fl $ \x sx flx ->
   runPrint (kp x) flx $ \y sy fly -> k y (sx ++ sy) fly
@@ -45,16 +45,16 @@ pempty = Print $ \fl _k -> fl
 ---------------------------------------------------------
 
 pint :: Print rf (Int -> r) r Int
-pint = Print $ \ fl k i -> k i (show i) fl
+pint = Print $ \fl k i -> k i (show i) fl
 
 pstring :: Print rf (String -> r) r String
-pstring = Print $ \ fl k s -> k s s fl
+pstring = Print $ \fl k s -> k s s fl
 
 pbool :: Print rf (Bool -> r) r Bool
-pbool = Print $ \ fl k b -> k b (show b) fl
+pbool = Print $ \fl k b -> k b (show b) fl
 
 pchar :: Print rf (Char -> r) r ()
-pchar = Print $ \ fl k c -> k () [c] fl
+pchar = Print $ \fl k c -> k () [c] fl
 
 space :: Print rf r r ()
 space = pchar @ ' '
@@ -75,10 +75,10 @@ data Foo
 pfoo :: Print (Foo -> r) (Foo -> r) r ()
 pfoo =
   (unBar $ pstring @ "Bar " *> pint *> space *> pstring *> ppure ())
-  <|> (unBaz $ pstring @ "Baz " *> pstring *> space *> pbool *> space *> pint *> ppure ())
+    <|> (unBaz $ pstring @ "Baz " *> pstring *> space *> pbool *> space *> pint *> ppure ())
   where
     unBar :: Print (Foo -> r) (Int -> String -> r) r' a -> Print (Foo -> r) (Foo -> r) r' a
-    unBar = mapkm (\cases {_fl k (Bar i s) -> k i s; fl _k x -> fl x})
+    unBar = mapkm (\cases _fl k (Bar i s) -> k i s; fl _k x -> fl x)
 
     unBaz :: Print (Foo -> r) (String -> Bool -> Int -> r) r' a -> Print (Foo -> r) (Foo -> r) r' a
-    unBaz =  mapkm (\cases {_fl k (Baz s b i) -> k s b i; fl _k x -> fl x})
+    unBaz = mapkm (\cases _fl k (Baz s b i) -> k s b i; fl _k x -> fl x)

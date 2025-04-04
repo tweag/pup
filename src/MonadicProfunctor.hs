@@ -1,5 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 
 module MonadicProfunctor where
 
@@ -27,7 +27,7 @@ pfst (f :*: _) = f
 psnd :: (p :*: q) u v -> q u v
 psnd (_ :*: g) = g
 
-instance (Profunctor p, Profunctor q) => Profunctor (p:*:q) where
+instance (Profunctor p, Profunctor q) => Profunctor (p :*: q) where
   rmap f (p :*: q) = (rmap f p) :*: (rmap f q)
   lmap g (p :*: q) = (lmap g p) :*: (lmap g q)
 
@@ -42,12 +42,12 @@ instance (Alternative (p u), Alternative (q u)) => Alternative ((p :*: q) u) whe
   empty = empty :*: empty
   (a :*: b) <|> (a' :*: b') = (a <|> a') :*: (b <|> b')
 
-instance (MonadPlus (p u), MonadPlus (q u)) => MonadPlus ((p :*: q) u) where
+instance (MonadPlus (p u), MonadPlus (q u)) => MonadPlus ((p :*: q) u)
 
-newtype Fwd m u v = Fwd { unFwd :: m v }
+newtype Fwd m u v = Fwd {unFwd :: m v}
   deriving (Functor)
 
-newtype Bwd m u v = Bwd { unBwd :: u -> m v}
+newtype Bwd m u v = Bwd {unBwd :: u -> m v}
   deriving (Functor)
 
 instance (Functor m) => Profunctor (Fwd m) where
@@ -77,7 +77,7 @@ instance (Alternative m) => Alternative (Fwd m u) where
   (Fwd a) <|> (Fwd b) = Fwd $ a <|> b
 
 instance (Alternative m) => Alternative (Bwd m u) where
-  empty = Bwd $ \ _ -> empty
+  empty = Bwd $ \_ -> empty
   (Bwd a) <|> (Bwd b) = Bwd $ \s -> a s <|> b s
 
 instance (MonadPlus m) => MonadPlus (Fwd m u)
@@ -86,7 +86,7 @@ instance (MonadPlus m) => MonadPlus (Bwd m u)
 
 -- StateT Maybe, really, but it was quicker to write this way without access to
 -- deps.
-newtype MayState s a = MayState { runState :: s -> Maybe (a, s) }
+newtype MayState s a = MayState {runState :: s -> Maybe (a, s)}
   deriving stock (Functor)
 
 instance Applicative (MayState s) where
@@ -95,11 +95,11 @@ instance Applicative (MayState s) where
 
 instance Monad (MayState s) where
   (MayState a) >>= k = MayState $ \s -> case a s of
-    Just (x, s')-> runState (k x) s'
+    Just (x, s') -> runState (k x) s'
     Nothing -> Nothing
 
 instance Alternative (MayState s) where
-  empty = MayState $ \_-> Nothing
+  empty = MayState $ \_ -> Nothing
   (MayState a) <|> (MayState b) = MayState $ \s ->
     a s <|> b s
 
@@ -107,25 +107,25 @@ instance MonadPlus (MayState s)
 
 -- WriterT Maybe, really, but it was quicker to write this way without access to
 -- deps.
-newtype MayWrite w a = MayWrite { runMayWrite :: Maybe (a, w) }
+newtype MayWrite w a = MayWrite {runMayWrite :: Maybe (a, w)}
   deriving stock (Functor)
 
-instance Monoid w => Applicative (MayWrite w) where
+instance (Monoid w) => Applicative (MayWrite w) where
   pure a = MayWrite $ Just (a, mempty)
   (MayWrite (Just (f, wf))) <*> (MayWrite (Just (x, wx))) = MayWrite $ Just (f x, wf <> wx)
   _ <*> _ = MayWrite Nothing
 
-instance Monoid w => Monad (MayWrite w) where
+instance (Monoid w) => Monad (MayWrite w) where
   (MayWrite (Just (a, w))) >>= k = MayWrite $ case runMayWrite (k a) of
-    Just (b, wb)-> Just (b, w <> wb)
+    Just (b, wb) -> Just (b, w <> wb)
     Nothing -> Nothing
   MayWrite Nothing >>= _ = MayWrite Nothing
 
-instance Monoid w => Alternative (MayWrite w) where
+instance (Monoid w) => Alternative (MayWrite w) where
   empty = MayWrite $ Nothing
   (MayWrite a) <|> (MayWrite b) = MayWrite $ a <|> b
 
-instance Monoid w => MonadPlus (MayWrite w)
+instance (Monoid w) => MonadPlus (MayWrite w)
 
 ------------------------------------------------------------------
 
@@ -152,7 +152,7 @@ print :: Biparser u v -> u -> Maybe String
 print bp = (fmap snd) . print' bp
 
 anyChar :: Biparser Char Char
-anyChar = mkBP (\cases { (c:s) -> Just (c, s); [] -> Nothing }) (\ c -> (Just (c, [c])))
+anyChar = mkBP (\cases (c : s) -> Just (c, s); [] -> Nothing) (\c -> (Just (c, [c])))
 
 anyOneChar :: Biparser String String
 anyOneChar = do
@@ -177,9 +177,10 @@ digit = do
   return $ read [c]
 
 bool :: Biparser Bool Bool
-bool = do
-  ((char 't' >> return True) `mupon` isTrue)
-  <|> ((char 'f' >> return False) `mupon` isFalse)
+bool =
+  do
+    ((char 't' >> return True) `mupon` isTrue)
+    <|> ((char 'f' >> return False) `mupon` isFalse)
   where
     isTrue True = Just ()
     isTrue False = Nothing
@@ -190,7 +191,7 @@ bool = do
 test :: Biparser (Either Int String) (Either Int String)
 test =
   ((char 'L' >> space >> digit >>= return . Left) `mupon` unL)
-  <|> ((char 'R' >> space >> anyOneChar >>= return . Right) `mupon` unR)
+    <|> ((char 'R' >> space >> anyOneChar >>= return . Right) `mupon` unR)
   where
     unL (Left i) = Just i
     unL (Right _) = Nothing
@@ -206,7 +207,7 @@ data Foo
 testFoo :: Biparser Foo Foo
 testFoo =
   ((pure Bar <* string "Bar " <*> (digit `upon` fst) <* space <*> (anyOneChar `upon` snd)) `mupon` unBar)
-  <|> ((pure Baz <* string "Baz " <*> (anyOneChar `upon` (\(c,_,_) -> c)) <* space <*> (bool `upon` (\(_,b,_) -> b)) <* space <*> (digit `upon` (\(_,_,i) -> i))) `mupon` unBaz)
+    <|> ((pure Baz <* string "Baz " <*> (anyOneChar `upon` (\(c, _, _) -> c)) <* space <*> (bool `upon` (\(_, b, _) -> b)) <* space <*> (digit `upon` (\(_, _, i) -> i))) `mupon` unBaz)
   where
     unBar (Bar i c) = Just (i, c)
     unBar _ = Nothing
