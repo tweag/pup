@@ -6,6 +6,7 @@ module Control.Monad.Indexed where
 
 import Control.Applicative qualified as Applicative
 import Control.Monad qualified as Monad
+import GHC.Stack (HasCallStack)
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
 
@@ -34,6 +35,42 @@ class (forall x. Monad (m x)) => Stacked m where
   empty :: m i i j a
   (<|>) :: m i i j a -> m i i j a -> m i i j a
 
+  stack :: (x -> j -> i) -> m x i j ()
+
+  -- | The continuationy style make it a little hard to read what's going
+  -- on. The general idea is that:
+  --
+  -- * if you want to re-raise, you call the `y` type continuation.
+  --
+  -- * if you want to return a value, you call the `a -> j` type continuation
+  --
+  -- * a payload in failure `x` is passed in the form `pld -> x'`
+  --
+  -- Depending on the types you may not be able to re-raise or return a value.
+  --
+  -- /e.g./
+  -- > type T = A Int | B | C
+  -- > p :: M (T -> y) (Maybe Int) j (Maybe Int)
+  -- >
+  -- > q :: M y (Maybe Int) j (Maybe Int)
+  -- > q = handle (\fl k t ->
+  -- >     case t of
+  -- >       A n -> Just n
+  -- >       B -> Nothing
+  -- >       C -> fl
+  -- >   ) p
+  handle :: (y -> (a -> j) -> x) -> m x i j a -> m y i j a
+
+(@) :: (Stacked m) => m x (a -> i) j b -> a -> m x i j b
+act @ a = stack (\_ s -> s a) *> act
+
+infixl 9 @
+
+-- Asserts that an `m x i j a` computation is complete. In that it can never
+-- raise an error.
+complete :: (HasCallStack, Stacked m) => m x i j a -> m y i j a
+complete = handle (\_ _ -> error "This printer wasn't complete")
+
 newtype IgnoreStack m x i j a = IgnoreStack {unIgnoreStack :: m a}
   deriving newtype (Functor)
 
@@ -47,6 +84,9 @@ instance (Prelude.Monad m) => Monad (IgnoreStack m x) where
 instance (Monad.MonadPlus m) => Stacked (IgnoreStack m) where
   empty = IgnoreStack Applicative.empty
   (IgnoreStack a) <|> (IgnoreStack b) = IgnoreStack $ a Applicative.<|> b
+
+  stack _ = IgnoreStack $ Prelude.pure ()
+  handle _ (IgnoreStack a) = IgnoreStack a
 
 data (:*:) f g x i j a = (:*:) (f x i j a) (g x i j a)
 
@@ -67,3 +107,7 @@ instance (Stacked f, Stacked g) => Stacked (f :*: g) where
   empty = empty :*: empty
 
   (a :*: a') <|> (b :*: b') = (a <|> b) :*: (a' <|> b')
+
+  stack f = (stack f) :*: (stack f)
+
+  handle h (a :*: b) = (handle h a :*: handle h b)

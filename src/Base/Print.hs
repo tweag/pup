@@ -19,3 +19,9 @@ instance Indexed.Stacked Print where
   empty = Print $ \fl _k -> fl
   (Print lft) <|> (Print rgt) = Print $ \fl k ->
     lft (rgt fl k) k
+
+  stack f = Print $ \fl k -> f fl (k () mempty fl)
+  handle h (Print prnt) =
+    -- Note: the success continuation of `prnt` ignores its failure
+    -- continuation. That's because we don't backtrack inside a `handle`.
+    Print $ \fl k -> prnt (h fl (\x -> k x "" fl)) (\x sx _ -> k x sx fl)
