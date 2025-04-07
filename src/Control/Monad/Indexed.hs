@@ -10,7 +10,7 @@ import GHC.Stack (HasCallStack)
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
 
-class (forall i j. Functor (f i j)) => Applicative f where
+class (forall i j. Functor (f i j), forall i. Prelude.Applicative (f i i)) => Applicative f where
   pure :: a -> f i i a
 
   (<*>) :: f i j (a -> b) -> f j k a -> f i k b
@@ -26,7 +26,7 @@ class (forall i j. Functor (f i j)) => Applicative f where
   (<*) :: f i j a -> f j k b -> f i k a
   (<*) = liftA2 const
 
-class (Applicative m) => Monad m where
+class (Applicative m, forall i. Prelude.Monad (m i i)) => Monad m where
   (>>=) :: m i j a -> (a -> m j k b) -> m i k b
 
 -- No equivalent to Alternative just because we don't need it. But it's, of
@@ -72,7 +72,7 @@ complete :: (HasCallStack, Stacked m) => m x i j a -> m y i j a
 complete = handle (\_ _ -> error "This printer wasn't complete")
 
 newtype IgnoreStack m x i j a = IgnoreStack {unIgnoreStack :: m a}
-  deriving newtype (Functor)
+  deriving newtype (Functor, Prelude.Applicative, Prelude.Monad)
 
 instance (Prelude.Applicative f) => Applicative (IgnoreStack f x) where
   pure a = IgnoreStack $ Prelude.pure a
@@ -93,10 +93,19 @@ data (:*:) f g x i j a = (:*:) (f x i j a) (g x i j a)
 instance (Functor (f x i j), Functor (g x i j)) => Functor ((f :*: g) x i j) where
   fmap f (a :*: b) = (fmap f a) :*: (fmap f b)
 
+instance (Prelude.Applicative (f x i j), Prelude.Applicative (g x i j)) => Prelude.Applicative ((f :*: g) x i j) where
+  pure a = (Prelude.pure a) :*: (Prelude.pure a)
+  (f :*: f') <*> (a :*: a') = (f Prelude.<*> a) :*: (f' Prelude.<*> a')
+
 instance (Applicative (f x), Applicative (g x)) => Applicative ((f :*: g) x) where
   pure a = (pure a) :*: (pure a)
 
   (f :*: f') <*> (a :*: a') = (f <*> a) :*: (f' <*> a')
+
+instance (Prelude.Monad (f x i j), Prelude.Monad (g x i j)) => Prelude.Monad ((f :*: g) x i j) where
+  (a :*: b) >>= k =
+    (a Prelude.>>= \x -> let (r :*: _) = k x in r)
+      :*: (b Prelude.>>= \y -> let (_ :*: s) = k y in s)
 
 instance (Monad (f x), Monad (g x)) => Monad ((f :*: g) x) where
   (a :*: b) >>= k =
@@ -111,3 +120,17 @@ instance (Stacked f, Stacked g) => Stacked (f :*: g) where
   stack f = (stack f) :*: (stack f)
 
   handle h (a :*: b) = (handle h a :*: handle h b)
+
+
+-- | A deriving via combinator
+newtype FromIndexed m i j a = FromIndexed (m i j a)
+  deriving (Functor)
+
+
+instance (Applicative m, i~j) => Prelude.Applicative (FromIndexed m i j) where
+  pure x = FromIndexed $ pure x
+  (FromIndexed f) <*> (FromIndexed a)= FromIndexed $ f <*> a
+
+instance (Monad m, i~j) => Prelude.Monad (FromIndexed m i j) where
+  (FromIndexed a) >>= k = FromIndexed $ a >>= \x ->
+    let (FromIndexed b) = k x in b

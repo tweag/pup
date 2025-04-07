@@ -1,12 +1,18 @@
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingVia #-}
 
 module Base.Print where
 
 import Control.Monad.Indexed qualified as Indexed
 import Prelude hiding (Applicative (..), Monad (..))
+import Prelude qualified
 
 newtype Print rf r r' a = Print {runPrint :: rf -> (a -> String -> rf -> r') -> r}
   deriving stock (Functor)
+
+deriving via (Indexed.FromIndexed (Print rf) r r) instance Prelude.Applicative (Print rf r r)
+
+deriving via (Indexed.FromIndexed (Print rf) r r) instance Prelude.Monad (Print rf r r)
 
 instance Indexed.Applicative (Print rf) where
   pure x = Print $ \fl k -> k x "" fl
