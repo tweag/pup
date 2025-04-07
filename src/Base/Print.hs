@@ -31,3 +31,9 @@ instance Indexed.Stacked Print where
     -- Note: the success continuation of `prnt` ignores its failure
     -- continuation. That's because we don't backtrack inside a `handle`.
     Print $ \fl k -> prnt (h fl (\x -> k x "" fl)) (\x sx _ -> k x sx fl)
+
+print :: Print (Maybe String) r (Maybe String) a -> r
+print prnt = runPrint prnt Nothing (\_ s _ -> Just s)
+
+anyChar :: Print rf (Char -> r) r Char
+anyChar = Print $ \fl k c -> k c [c] fl

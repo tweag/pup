@@ -1,6 +1,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE QualifiedDo #-}
 
 module Control.Monad.Indexed where
 
@@ -16,18 +17,25 @@ class (forall i j. Functor (f i j), forall i. Prelude.Applicative (f i i)) => Ap
   (<*>) :: f i j (a -> b) -> f j k a -> f i k b
   default (<*>) :: (Monad f) => f i j (a -> b) -> f j k a -> f i k b
   ff <*> aa = ff >>= \f -> aa >>= \a -> pure (f a)
+  infixl 4 <*>
 
   liftA2 :: (a -> b -> c) -> f i j a -> f j k b -> f i k c
   liftA2 f x = (<*>) (fmap f x)
 
   (*>) :: f i j a -> f j k b -> f i k b
   a1 *> a2 = (id <$ a1) <*> a2
+  infixl 4 *>
 
   (<*) :: f i j a -> f j k b -> f i k a
   (<*) = liftA2 const
+  infixl 4 <*
 
 class (Applicative m, forall i. Prelude.Monad (m i i)) => Monad m where
   (>>=) :: m i j a -> (a -> m j k b) -> m i k b
+
+-- | For `QualifiedDo` notation
+(>>) :: Applicative m => m i j () -> m j k a -> m i k a
+(>>) = (*>)
 
 -- No equivalent to Alternative just because we don't need it. But it's, of
 -- course, not a problem.
@@ -70,6 +78,20 @@ infixl 9 @
 -- raise an error.
 complete :: (HasCallStack, Stacked m) => m x i j a -> m y i j a
 complete = handle (\_ _ -> error "This printer wasn't complete")
+
+guard :: Stacked m => Bool -> m i i i ()
+guard p = if p then pure () else empty
+
+-- some :: Stacked m => (forall r'. m r' (a -> r') r' b) -> m ([a] -> r) ([a] -> r) r [b]
+-- some a = Control.Monad.Indexed.do
+--   stack uncons
+--   (:) <$> a <*> complete (many a)
+--   where
+--     uncons fl _k [] = fl []
+--     uncons _fl k (x:xs) = k x xs
+
+-- many :: Stacked m => (forall r'. m r' (a -> r') r' b) -> m x ([a] -> r) r [b]
+-- many a = complete $ some a <|> pure []
 
 newtype IgnoreStack m x i j a = IgnoreStack {unIgnoreStack :: m a}
   deriving newtype (Functor, Prelude.Applicative, Prelude.Monad)
