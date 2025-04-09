@@ -4,7 +4,7 @@
 module Examples where
 
 import Combinators
-import Control.Monad.Indexed ((<*>), (<*), (<|>))
+import Control.Monad.Indexed ((<*), (<*>), (<|>))
 import Control.Monad.Indexed qualified as Indexed
 import Prelude hiding (Applicative (..), Monad (..))
 
