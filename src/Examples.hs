@@ -18,10 +18,10 @@ data U = K T Int | L
 
 uupT :: PUP (T -> r) r T
 uupT =
-  lead @"C" @T <* string "C" <* space <*> int <* space <*> bool
-    <|> lead @"D" @T <* string "D" <* space <*> anyChar <* space <*> bool <* space <*> int
+  lead @"C" <* string "C" <* space <*> int <* space <*> bool
+    <|> lead @"D" <* string "D" <* space <*> anyChar <* space <*> bool <* space <*> int
 
 uupU :: PUP (U -> r) r U
 uupU =
-  lead @"K" @U <* string "K" <* space <*> uupT <* space <*> int
-    <|> lead @"L" @U <* string "L"
+  lead @"K" <* string "K" <* space <*> uupT <* space <*> int
+    <|> lead @"L" <* string "L"
