@@ -19,7 +19,7 @@ type PUP = Print Indexed.:*: Indexed.IgnoreStack Parse
 parse :: PUP r r' a -> String -> Maybe (a, String)
 parse (_ Indexed.:*: Indexed.IgnoreStack prse) = Parse.runParse prse
 
-print :: PUP r (Maybe String) a -> r -> r
+print :: Indexed.Unroll r (Maybe String) => PUP r (Maybe String) a -> r
 print (prnt Indexed.:*: _) = Print.print prnt
 
 anyChar :: PUP (Char -> r) r Char

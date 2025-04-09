@@ -1,4 +1,3 @@
-{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DerivingVia #-}
 
 module Base.Print where
@@ -34,8 +33,8 @@ instance Indexed.Stacked Print where
 
   stack f unr = Print $ \fl k -> f fl (k () mempty (unr fl))
 
-print :: Print r (Maybe String) a -> r -> r
-print prnt fl = runPrint prnt fl (\_ s _ -> Just s)
+print :: forall r a. (Indexed.Unroll r (Maybe String)) => Print r (Maybe String) a -> r
+print prnt = runPrint prnt (Indexed.unroll @r @(Maybe String) Nothing) (\_ s _ -> Just s)
 
 anyChar :: Print (Char -> r) r Char
 anyChar = Print $ \fl k c -> k c [c] (fl c)

@@ -150,3 +150,14 @@ instance (Stacked m, i ~ j) => Applicative.Alternative (FromIndexed m i j) where
   (FromIndexed a) <|> (FromIndexed b) = FromIndexed $ a <|> b
 
 instance (Stacked m, i ~ j) => Monad.MonadPlus (FromIndexed m i j)
+
+--------------------------------------------------------------
+
+class Unroll i j where
+  unroll :: j -> i
+
+instance {-# OVERLAPPING #-} Unroll i i where
+  unroll = id
+
+instance (Unroll i j) => Unroll (a -> i) j where
+  unroll j _a = unroll j
