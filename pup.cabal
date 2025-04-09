@@ -21,6 +21,7 @@ library
     Combinators
     Control.Monad.Indexed
     Examples
+    Generic
   other-modules:
     Paths_pup
   hs-source-dirs:
