@@ -20,6 +20,7 @@ library
     Base.Print
     Combinators
     Control.Monad.Indexed
+    Examples
   other-modules:
     Paths_pup
   hs-source-dirs:

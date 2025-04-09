@@ -3,21 +3,27 @@
 
 module Base.Print where
 
+import Control.Applicative
+import Control.Monad
 import Control.Monad.Indexed qualified as Indexed
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
 
-newtype Print rf r r' a = Print {runPrint :: rf -> (a -> String -> rf -> r') -> r}
+newtype Print r r' a = Print {runPrint :: r -> (a -> String -> r' -> r') -> r}
   deriving stock (Functor)
 
-deriving via (Indexed.FromIndexed (Print rf) r r) instance Prelude.Applicative (Print rf r r)
+deriving via (Indexed.FromIndexed Print r r) instance Prelude.Applicative (Print r r)
 
-deriving via (Indexed.FromIndexed (Print rf) r r) instance Prelude.Monad (Print rf r r)
+deriving via (Indexed.FromIndexed Print r r) instance Prelude.Monad (Print r r)
 
-instance Indexed.Applicative (Print rf) where
+deriving via (Indexed.FromIndexed Print r r) instance Alternative (Print r r)
+
+deriving via (Indexed.FromIndexed Print r r) instance MonadPlus (Print r r)
+
+instance Indexed.Applicative Print where
   pure x = Print $ \fl k -> k x "" fl
 
-instance Indexed.Monad (Print rf) where
+instance Indexed.Monad Print where
   (Print a) >>= kp = Print $ \fl k -> a fl $ \x sx flx ->
     runPrint (kp x) flx $ \y sy fly -> k y (sx ++ sy) fly
 
@@ -26,14 +32,10 @@ instance Indexed.Stacked Print where
   (Print lft) <|> (Print rgt) = Print $ \fl k ->
     lft (rgt fl k) k
 
-  stack f = Print $ \fl k -> f fl (k () mempty fl)
-  handle h (Print prnt) =
-    -- Note: the success continuation of `prnt` ignores its failure
-    -- continuation. That's because we don't backtrack inside a `handle`.
-    Print $ \fl k -> prnt (h fl (\x -> k x "" fl)) (\x sx _ -> k x sx fl)
+  stack f unr = Print $ \fl k -> f fl (k () mempty (unr fl))
 
-print :: Print (Maybe String) r (Maybe String) a -> r
-print prnt = runPrint prnt Nothing (\_ s _ -> Just s)
+print :: Print r (Maybe String) a -> r -> r
+print prnt fl = runPrint prnt fl (\_ s _ -> Just s)
 
-anyChar :: Print rf (Char -> r) r Char
-anyChar = Print $ \fl k c -> k c [c] fl
+anyChar :: Print (Char -> r) r Char
+anyChar = Print $ \fl k c -> k c [c] (fl c)

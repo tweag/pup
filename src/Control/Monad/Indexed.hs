@@ -1,13 +1,12 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE QualifiedDo #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module Control.Monad.Indexed where
 
 import Control.Applicative qualified as Applicative
 import Control.Monad qualified as Monad
-import GHC.Stack (HasCallStack)
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
 
@@ -34,125 +33,120 @@ class (Applicative m, forall i. Prelude.Monad (m i i)) => Monad m where
   (>>=) :: m i j a -> (a -> m j k b) -> m i k b
 
 -- | For `QualifiedDo` notation
-(>>) :: Applicative m => m i j () -> m j k a -> m i k a
+(>>) :: (Applicative m) => m i j () -> m j k a -> m i k a
 (>>) = (*>)
 
--- No equivalent to Alternative just because we don't need it. But it's, of
--- course, not a problem.
-class (forall x. Monad (m x)) => Stacked m where
-  empty :: m i i j a
-  (<|>) :: m i i j a -> m i i j a -> m i i j a
+-- | Like for indexed monads and applicatives, we only have `MonadPlus` for
+-- `m i i`. So we need custom combinators for empty and <|>.
+class (Monad m, forall i. Monad.MonadPlus (m i i)) => Stacked m where
+  empty :: m i j a
+  (<|>) :: m i j a -> m i j a -> m i j a
+  infixl 3 <|>
 
-  stack :: (x -> j -> i) -> m x i j ()
+  -- Alternative: we could have an Applicative modality `S m`, and two methods
+  -- pop :: m (a -> i) i (S m a)
+  -- push :: S m a -> m i (a -> i)
+  --
+  -- It may expose less implementation details. `S Print = Identity`, and `S Parse
+  -- = Const ()`. The latter is why we need the modality (and why it'd need to
+  -- be an attached type family). It'd be more pleasant to use, I think, no need
+  -- for the unrolling function. Intuitive, and such. But is uses a type family,
+  -- which is always a little bit annoying I suppose.
+  stack :: (i -> j -> i) -> (i -> j) -> m i j ()
 
-  -- | The continuationy style make it a little hard to read what's going
-  -- on. The general idea is that:
-  --
-  -- * if you want to re-raise, you call the `y` type continuation.
-  --
-  -- * if you want to return a value, you call the `a -> j` type continuation
-  --
-  -- * a payload in failure `x` is passed in the form `pld -> x'`
-  --
-  -- Depending on the types you may not be able to re-raise or return a value.
-  --
-  -- /e.g./
-  -- > type T = A Int | B | C
-  -- > p :: M (T -> y) (Maybe Int) j (Maybe Int)
-  -- >
-  -- > q :: M y (Maybe Int) j (Maybe Int)
-  -- > q = handle (\fl k t ->
-  -- >     case t of
-  -- >       A n -> Just n
-  -- >       B -> Nothing
-  -- >       C -> fl
-  -- >   ) p
-  handle :: (y -> (a -> j) -> x) -> m x i j a -> m y i j a
-
-(@) :: (Stacked m) => m x (a -> i) j b -> a -> m x i j b
-act @ a = stack (\_ s -> s a) *> act
+(@) :: (Stacked m) => m (a -> i) j b -> a -> m i j b
+act @ a = stack (\_ s -> s a) (\s _ -> s) *> act
 
 infixl 9 @
 
--- Asserts that an `m x i j a` computation is complete. In that it can never
--- raise an error.
-complete :: (HasCallStack, Stacked m) => m x i j a -> m y i j a
-complete = handle (\_ _ -> error "This printer wasn't complete")
+-- The fact that this can't be define makes me think that the pop/push
+-- definition is actually better.
+-- pop' :: (Stacked m) => m (a -> i) i ()
+-- pop' = stack const _u
 
-guard :: Stacked m => Bool -> m i i i ()
-guard p = if p then pure () else empty
+some :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m ([a] -> r) r [b]
+some a = Control.Monad.Indexed.do
+  stack uncons (\k x xs -> k (x : xs))
+  (:) <$> a <*> many a
+  where
+    uncons fl _k [] = fl []
+    uncons _fl k (x : xs) = k x xs
 
--- some :: Stacked m => (forall r'. m r' (a -> r') r' b) -> m ([a] -> r) ([a] -> r) r [b]
--- some a = Control.Monad.Indexed.do
---   stack uncons
---   (:) <$> a <*> complete (many a)
---   where
---     uncons fl _k [] = fl []
---     uncons _fl k (x:xs) = k x xs
+many :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m ([a] -> r) r [b]
+many a = some a <|> (stack (\_ s _ -> s) (\_k -> error "never called") *> pure [])
 
--- many :: Stacked m => (forall r'. m r' (a -> r') r' b) -> m x ([a] -> r) r [b]
--- many a = complete $ some a <|> pure []
+newtype IgnoreStack m i j a = IgnoreStack {unIgnoreStack :: m a}
+  deriving newtype
+    ( Functor,
+      Prelude.Applicative,
+      Prelude.Monad,
+      Applicative.Alternative,
+      Monad.MonadPlus
+    )
 
-newtype IgnoreStack m x i j a = IgnoreStack {unIgnoreStack :: m a}
-  deriving newtype (Functor, Prelude.Applicative, Prelude.Monad)
-
-instance (Prelude.Applicative f) => Applicative (IgnoreStack f x) where
+instance (Prelude.Applicative f) => Applicative (IgnoreStack f) where
   pure a = IgnoreStack $ Prelude.pure a
   IgnoreStack f <*> IgnoreStack a = IgnoreStack $ f Prelude.<*> a
 
-instance (Prelude.Monad m) => Monad (IgnoreStack m x) where
+instance (Prelude.Monad m) => Monad (IgnoreStack m) where
   IgnoreStack a >>= k = IgnoreStack $ a Prelude.>>= \x -> unIgnoreStack (k x)
 
 instance (Monad.MonadPlus m) => Stacked (IgnoreStack m) where
   empty = IgnoreStack Applicative.empty
   (IgnoreStack a) <|> (IgnoreStack b) = IgnoreStack $ a Applicative.<|> b
+  stack _ _ = IgnoreStack $ Prelude.pure ()
 
-  stack _ = IgnoreStack $ Prelude.pure ()
-  handle _ (IgnoreStack a) = IgnoreStack a
+data (:*:) f g i j a = (:*:) (f i j a) (g i j a)
+  deriving stock (Functor)
 
-data (:*:) f g x i j a = (:*:) (f x i j a) (g x i j a)
-
-instance (Functor (f x i j), Functor (g x i j)) => Functor ((f :*: g) x i j) where
-  fmap f (a :*: b) = (fmap f a) :*: (fmap f b)
-
-instance (Prelude.Applicative (f x i j), Prelude.Applicative (g x i j)) => Prelude.Applicative ((f :*: g) x i j) where
+instance (Prelude.Applicative (f i j), Prelude.Applicative (g i j)) => Prelude.Applicative ((f :*: g) i j) where
   pure a = (Prelude.pure a) :*: (Prelude.pure a)
-  (f :*: f') <*> (a :*: a') = (f Prelude.<*> a) :*: (f' Prelude.<*> a')
+  ~(f :*: f') <*> (a :*: a') = (f Prelude.<*> a) :*: (f' Prelude.<*> a')
 
-instance (Applicative (f x), Applicative (g x)) => Applicative ((f :*: g) x) where
+instance (Applicative f, Applicative g) => Applicative (f :*: g) where
   pure a = (pure a) :*: (pure a)
 
-  (f :*: f') <*> (a :*: a') = (f <*> a) :*: (f' <*> a')
+  ~(f :*: f') <*> ~(a :*: a') = (f <*> a) :*: (f' <*> a')
+  ~(a :*: a') *> ~(b :*: b') = (a *> b) :*: (a' *> b')
+  ~(a :*: a') <* ~(b :*: b') = (a <* b) :*: (a' <* b')
 
-instance (Prelude.Monad (f x i j), Prelude.Monad (g x i j)) => Prelude.Monad ((f :*: g) x i j) where
-  (a :*: b) >>= k =
+instance (Prelude.Monad (f i j), Prelude.Monad (g i j)) => Prelude.Monad ((f :*: g) i j) where
+  ~(a :*: b) >>= k =
     (a Prelude.>>= \x -> let (r :*: _) = k x in r)
       :*: (b Prelude.>>= \y -> let (_ :*: s) = k y in s)
 
-instance (Monad (f x), Monad (g x)) => Monad ((f :*: g) x) where
-  (a :*: b) >>= k =
+instance (Monad f, Monad g) => Monad (f :*: g) where
+  ~(a :*: b) >>= k =
     (a >>= \x -> let (r :*: _) = k x in r)
       :*: (b >>= \y -> let (_ :*: s) = k y in s)
 
+instance (Applicative.Alternative (f i j), Applicative.Alternative (g i j)) => Applicative.Alternative ((f :*: g) i j) where
+  empty = Applicative.empty :*: Applicative.empty
+  ~(a :*: a') <|> ~(b :*: b') = (a Applicative.<|> b) :*: (a' Applicative.<|> b')
+
+instance (Monad.MonadPlus (f i j), Monad.MonadPlus (g i j)) => Monad.MonadPlus ((f :*: g) i j)
+
 instance (Stacked f, Stacked g) => Stacked (f :*: g) where
   empty = empty :*: empty
-
-  (a :*: a') <|> (b :*: b') = (a <|> b) :*: (a' <|> b')
-
-  stack f = (stack f) :*: (stack f)
-
-  handle h (a :*: b) = (handle h a :*: handle h b)
-
+  ~(a :*: a') <|> ~(b :*: b') = (a <|> b) :*: (a' <|> b')
+  stack f unr = (stack f unr) :*: (stack f unr)
 
 -- | A deriving via combinator
 newtype FromIndexed m i j a = FromIndexed (m i j a)
   deriving (Functor)
 
-
-instance (Applicative m, i~j) => Prelude.Applicative (FromIndexed m i j) where
+instance (Applicative m, i ~ j) => Prelude.Applicative (FromIndexed m i j) where
   pure x = FromIndexed $ pure x
-  (FromIndexed f) <*> (FromIndexed a)= FromIndexed $ f <*> a
+  (FromIndexed f) <*> (FromIndexed a) = FromIndexed $ f <*> a
 
-instance (Monad m, i~j) => Prelude.Monad (FromIndexed m i j) where
-  (FromIndexed a) >>= k = FromIndexed $ a >>= \x ->
-    let (FromIndexed b) = k x in b
+instance (Monad m, i ~ j) => Prelude.Monad (FromIndexed m i j) where
+  (FromIndexed a) >>= k =
+    FromIndexed $
+      a >>= \x ->
+        let (FromIndexed b) = k x in b
+
+instance (Stacked m, i ~ j) => Applicative.Alternative (FromIndexed m i j) where
+  empty = FromIndexed empty
+  (FromIndexed a) <|> (FromIndexed b) = FromIndexed $ a <|> b
+
+instance (Stacked m, i ~ j) => Monad.MonadPlus (FromIndexed m i j)
