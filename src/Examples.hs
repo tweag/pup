@@ -5,7 +5,9 @@
 module Examples where
 
 import Combinators
+import Control.Monad
 import Control.Monad.Indexed ((<*), (<*>), (<|>))
+import Control.Monad.Indexed qualified as Indexed
 import GHC.Generics
 import Generic (lead)
 import Prelude hiding (Applicative (..), Monad (..))
@@ -25,3 +27,12 @@ uupU :: PUP (U -> r) r U
 uupU =
   lead @"K" <* string "K" <* space <*> uupT <* space <*> int
     <|> lead @"L" <* string "L"
+
+-- An example of backtracking behaviour
+bktrk :: PUP r r ()
+bktrk = Indexed.do
+  b <- Indexed.pure True <|> Indexed.pure False
+  guard $ not b
+  case b of
+    True -> string "True"
+    False -> string "False"
