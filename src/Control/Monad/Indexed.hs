@@ -52,6 +52,11 @@ class (Monad m, forall i. Monad.MonadPlus (m i i)) => Stacked m where
   -- be an attached type family). It'd be more pleasant to use, I think, no need
   -- for the unrolling function. Intuitive, and such. But is uses a type family,
   -- which is always a little bit annoying I suppose.
+  --
+  -- I'm not sure it's so good though, you need some additional primitive to
+  -- fail in S, like `S m (Maybe a) -> m (S m a)`. And you have to build
+  -- products for constructors like `unC :: S m T -> S (Maybe (Int, Bool))`,
+  -- which we've managed to avoid so far.
   stack :: (i -> j -> i) -> (i -> j) -> m i j ()
 
 (@) :: (Stacked m) => m (a -> i) j b -> a -> m i j b
@@ -60,7 +65,7 @@ act @ a = stack (\_ s -> s a) (\s _ -> s) *> act
 infixl 9 @
 
 -- The fact that this can't be define makes me think that the pop/push
--- definition is actually better.
+-- definition is of value.
 -- pop' :: (Stacked m) => m (a -> i) i ()
 -- pop' = stack const _u
 
