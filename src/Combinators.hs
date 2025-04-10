@@ -22,6 +22,9 @@ parse (_ Indexed.:*: Indexed.IgnoreStack prse) = Parse.runParse prse
 print :: (Indexed.Unroll r (Maybe String)) => PUP r (Maybe String) a -> r
 print (prnt Indexed.:*: _) = Print.print prnt
 
+once :: (r -> r') -> PUP r r' a -> PUP r r' a
+once unr (prnt Indexed.:*: Indexed.IgnoreStack prse) = (Print.once unr prnt) Indexed.:*: Indexed.IgnoreStack prse
+
 anyChar :: PUP (Char -> r) r Char
 anyChar = Print.anyChar Indexed.:*: Indexed.IgnoreStack Parse.anyChar
 

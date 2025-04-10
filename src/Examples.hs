@@ -36,3 +36,21 @@ bktrk = Indexed.do
   case b of
     True -> string "True"
     False -> string "False"
+-- Why does (<|>) backtrack in Print. Because:
+--
+-- pure True <|> pure False = Print $ \fl k -> k True "" (k False "" fl)
+--
+-- so
+--
+-- (pure True <|> pure False) >>= f = Print $ \fl k ->
+--   let k x sk flx = runPrint (f x) flx $ \y sy fly -> k y (sx ++ sy) fly in
+--   k True "" (k False "" fl)
+
+-- Avoiding backtracking
+bktrk_once :: Bool -> PUP r r ()
+bktrk_once b0 = Indexed.do
+  b <- Combinators.once id (Indexed.pure True <|> Indexed.pure False)
+  guard $ b == b0
+  case b of
+    True -> string "True"
+    False -> string "False"

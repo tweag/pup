@@ -38,3 +38,6 @@ print prnt = runPrint prnt (Indexed.unroll @r @(Maybe String) Nothing) (\_ s _ -
 
 anyChar :: Print (Char -> r) r Char
 anyChar = Print $ \fl k c -> k c [c] (fl c)
+
+once :: (r -> r') -> Print r r' a -> Print r r' a
+once unr (Print a) = Print $ \fl k -> a fl $ \x sx _flx -> k x sx (unr fl)
