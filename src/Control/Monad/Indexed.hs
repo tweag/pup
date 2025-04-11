@@ -43,9 +43,6 @@ class (Monad m, forall i. Monad.MonadPlus (m i i)) => Stacked m where
   (<|>) :: m i j a -> m i j a -> m i j a
   infixl 3 <|>
 
-  stack :: (i -> j -> i) -> (i -> j) -> m i j ()
-  stack f unr = shift' $ \k fl -> pure $ f fl (k (unr fl))
-
   -- Alternative: we could have an Applicative modality `S m`, and a richer shift
   -- shift' :: ((S m a -> r' -> r') -> r -> m r r'' r'') -> m r r' (S m a)
   --
@@ -62,6 +59,9 @@ class (Monad m, forall i. Monad.MonadPlus (m i i)) => Stacked m where
   -- convenient to use a value behind such a modality. You might as well just
   -- use `shift'` honestly.
   shift' :: ((r' -> r') -> r -> m r r'' r'') -> m r r' ()
+
+stack :: (Stacked m) => (i -> j -> i) -> (i -> j) -> m i j ()
+stack f unr = shift' $ \k fl -> pure $ f fl (k (unr fl))
 
 (@) :: (Stacked m) => m (a -> i) j b -> a -> m i j b
 act @ a = stack (\_ s -> s a) (\s _ -> s) *> act
@@ -101,7 +101,6 @@ instance (Prelude.Monad m) => Monad (IgnoreStack m) where
 instance (Monad.MonadPlus m) => Stacked (IgnoreStack m) where
   empty = IgnoreStack Applicative.empty
   (IgnoreStack a) <|> (IgnoreStack b) = IgnoreStack $ a Applicative.<|> b
-  stack _ _ = IgnoreStack $ Prelude.pure ()
   shift' _ = IgnoreStack $ Prelude.pure ()
 
 data (:*:) f g i j a = (:*:) (f i j a) (g i j a)
@@ -145,7 +144,6 @@ instance (Monad.MonadPlus (f i j), Monad.MonadPlus (g i j)) => Monad.MonadPlus (
 instance (Stacked f, Stacked g) => Stacked (f :*: g) where
   empty = empty :*: empty
   ~(a :*: a') <|> ~(b :*: b') = (a <|> b) :*: (a' <|> b')
-  stack f unr = (stack f unr) :*: (stack f unr)
   shift' f = (shift' (\s fl' -> fst_star (f s fl'))) :*: (shift' (\s fl' -> snd_star (f s fl')))
 
 -- | A deriving via combinator
