@@ -31,7 +31,8 @@ instance Indexed.Stacked Print where
   (Print lft) <|> (Print rgt) = Print $ \fl k ->
     lft (rgt fl k) k
 
-  stack f unr = Print $ \fl k -> f fl (k () mempty (unr fl))
+  -- stack f unr = Print $ \fl k -> f fl (k () mempty (unr fl))
+  shift' f = shift (\k -> f (k () ""))
 
 print :: forall r a. (Indexed.Unroll r (Maybe String)) => Print r (Maybe String) a -> r
 print prnt = runPrint prnt (Indexed.unroll @r @(Maybe String) Nothing) (\_ s _ -> Just s)
@@ -41,3 +42,6 @@ anyChar = Print $ \fl k c -> k c [c] (fl c)
 
 once :: (r -> r') -> Print r r' a -> Print r r' a
 once unr (Print a) = Print $ \fl k -> a fl $ \x sx _flx -> k x sx (unr fl)
+
+shift :: ((a -> String -> r' -> r') -> r -> Print r r'' r'') -> Print r r' a
+shift f = Print $ \fl k -> runPrint (f k fl) fl (\k' _ _ -> k')

@@ -43,31 +43,33 @@ class (Monad m, forall i. Monad.MonadPlus (m i i)) => Stacked m where
   (<|>) :: m i j a -> m i j a -> m i j a
   infixl 3 <|>
 
-  -- Alternative: we could have an Applicative modality `S m`, and two methods
+  stack :: (i -> j -> i) -> (i -> j) -> m i j ()
+  stack f unr = shift' $ \k fl -> pure $ f fl (k (unr fl))
+
+  -- Alternative: we could have an Applicative modality `S m`, and a richer shift
+  -- shift' :: ((S m a -> r' -> r') -> r -> m r r'' r'') -> m r r' (S m a)
+  --
+  -- `S Print = Identity`, and `S Parse = Const ()`. The latter is why we need
+  -- the modality (and why it'd need to be an attached type family). It's kind
+  -- of cool. And you could define
+  --
   -- pop :: m (a -> i) i (S m a)
   -- push :: S m a -> m i (a -> i)
   --
-  -- It may expose less implementation details. `S Print = Identity`, and `S Parse
-  -- = Const ()`. The latter is why we need the modality (and why it'd need to
-  -- be an attached type family). It'd be more pleasant to use, I think, no need
-  -- for the unrolling function. Intuitive, and such. But is uses a type family,
-  -- which is always a little bit annoying I suppose.
+  -- But is uses a type family, which is always a little bit annoying I suppose.
   --
-  -- I'm not sure it's so good though, you need some additional primitive to
-  -- fail in S, like `S m (Maybe a) -> m (S m a)`. And you have to build
-  -- products for constructors like `unC :: S m T -> S (Maybe (Int, Bool))`,
-  -- which we've managed to avoid so far.
-  stack :: (i -> j -> i) -> (i -> j) -> m i j ()
+  -- I'm not sure it adds much expressive power, though. It wouldn't be terribly
+  -- convenient to use a value behind such a modality. You might as well just
+  -- use `shift'` honestly.
+  shift' :: ((r' -> r') -> r -> m r r'' r'') -> m r r' ()
 
 (@) :: (Stacked m) => m (a -> i) j b -> a -> m i j b
 act @ a = stack (\_ s -> s a) (\s _ -> s) *> act
 
 infixl 9 @
 
--- The fact that this can't be define makes me think that the pop/push
--- definition is of value.
--- pop' :: (Stacked m) => m (a -> i) i ()
--- pop' = stack const _u
+pop' :: (Stacked m) => m (a -> i) i ()
+pop' = shift' $ \k fl -> pure (\a -> k (fl a))
 
 some :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m ([a] -> r) r [b]
 some a = Control.Monad.Indexed.do
@@ -78,7 +80,7 @@ some a = Control.Monad.Indexed.do
     uncons _fl k (x : xs) = k x xs
 
 many :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m ([a] -> r) r [b]
-many a = some a <|> (stack (\_ s _ -> s) (\_k -> error "never called") *> pure [])
+many a = some a <|> (pop' *> pure [])
 
 newtype IgnoreStack m i j a = IgnoreStack {unIgnoreStack :: m a}
   deriving newtype
@@ -100,9 +102,18 @@ instance (Monad.MonadPlus m) => Stacked (IgnoreStack m) where
   empty = IgnoreStack Applicative.empty
   (IgnoreStack a) <|> (IgnoreStack b) = IgnoreStack $ a Applicative.<|> b
   stack _ _ = IgnoreStack $ Prelude.pure ()
+  shift' _ = IgnoreStack $ Prelude.pure ()
 
 data (:*:) f g i j a = (:*:) (f i j a) (g i j a)
   deriving stock (Functor)
+
+-- ⚠️ All the patterns on `x :*: y` must be lazy lest definitions like `many` start
+-- looping because they become strict in their recursive arguments.
+fst_star :: (f :*: g) i j a -> f i j a
+fst_star ~(x :*: _) = x
+
+snd_star :: (f :*: g) i j a -> g i j a
+snd_star ~(_ :*: y) = y
 
 instance (Prelude.Applicative (f i j), Prelude.Applicative (g i j)) => Prelude.Applicative ((f :*: g) i j) where
   pure a = (Prelude.pure a) :*: (Prelude.pure a)
@@ -135,6 +146,7 @@ instance (Stacked f, Stacked g) => Stacked (f :*: g) where
   empty = empty :*: empty
   ~(a :*: a') <|> ~(b :*: b') = (a <|> b) :*: (a' <|> b')
   stack f unr = (stack f unr) :*: (stack f unr)
+  shift' f = (shift' (\s fl' -> fst_star (f s fl'))) :*: (shift' (\s fl' -> snd_star (f s fl')))
 
 -- | A deriving via combinator
 newtype FromIndexed m i j a = FromIndexed (m i j a)
