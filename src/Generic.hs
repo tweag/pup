@@ -7,7 +7,6 @@
 
 module Generic where
 
-import Combinators qualified as Combinators
 import Control.Monad.Indexed qualified as Indexed
 import Data.Kind
 import GHC.Generics
@@ -25,7 +24,7 @@ class Leading c t where
 
 -- the_constr :: CFieldsType c (Rep t ()) tgt
 
-lead :: forall c t r. (Leading c t) => Combinators.PUP (t -> r) (CFieldsType c (Rep t ()) r) (CFieldsType c (Rep t ()) t)
+lead :: forall c t r m. (Leading c t, Indexed.Stacked m) => m (t -> r) (CFieldsType c (Rep t ()) r) (CFieldsType c (Rep t ()) t)
 lead = Indexed.do
   Indexed.stack (match @c @t @r) (unmatch @c @t @r)
   Indexed.pure $ unmatch @c @t @t id
