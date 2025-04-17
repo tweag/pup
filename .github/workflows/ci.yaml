@@ -54,3 +54,5 @@ jobs:
       run: nix develop --command bash -c "echo '=== Nix dependencies installed ==='"
     - name: Stack build
       run: nix develop --command bash -c "stack build"
+    - name: Stack test
+      run: nix develop --command bash -c "stack test"
