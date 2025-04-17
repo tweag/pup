@@ -36,6 +36,7 @@ bktrk = Indexed.do
   case b of
     True -> string "True"
     False -> string "False"
+
 -- Why does (<|>) backtrack in Print. Because:
 --
 -- pure True <|> pure False = Print $ \fl k -> k True "" (k False "" fl)
