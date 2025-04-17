@@ -40,4 +40,4 @@ instance (Comonad w) => Indexed.Stacked (Cont2W w) where
   empty = Cont2W $ \_ fl -> fl
   (Cont2W a) <|> (Cont2W b) = Cont2W $ \wk fl -> a wk (b wk fl)
 
-  shift' f = shift (\wk -> f (extract (($ ()) <$> wk)))
+  shift_ f = shift (\wk -> f (extract (($ ()) <$> wk)))
