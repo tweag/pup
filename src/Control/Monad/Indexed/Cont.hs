@@ -4,6 +4,7 @@
 module Control.Monad.Indexed.Cont where
 
 import Control.Comonad
+import Control.Comonad.Weave
 import Control.Monad.Indexed qualified as Indexed
 
 newtype ContW w r r' a = ContW {runContW :: w (a -> r') -> r}
@@ -29,3 +30,15 @@ run act = shift $ Indexed.pure . act
 
 run' :: (Comonad w) => (w r -> r) -> ContW w r r ()
 run' act = shift $ \wk -> Indexed.pure $ act (($ ()) <$> wk)
+
+----------------------------------------------------------------------------
+--
+-- Exploratory: Stacked without explicit Cont2
+--
+----------------------------------------------------------------------------
+
+empty :: (Weave w r) => ContW w r r' a
+empty = ContW $ exit
+
+(<|>) :: (Weave w r) => ContW w r r' a -> ContW w r r' a -> ContW w r r' a
+(ContW a) <|> (ContW b) = ContW $ \wk -> (a `weave` b) wk

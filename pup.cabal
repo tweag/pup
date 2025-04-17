@@ -19,6 +19,7 @@ library
     Base.Parse
     Base.Print
     Combinators
+    Control.Comonad.Weave
     Control.Monad.Indexed
     Control.Monad.Indexed.Cont
     Control.Monad.Indexed.Cont2
