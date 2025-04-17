@@ -68,8 +68,11 @@ act @ a = stack (\_ s -> s a) (\s _ -> s) *> act
 
 infixl 9 @
 
-pop' :: (Stacked m) => m (a -> i) i ()
-pop' = shift_ $ \k fl -> pure (\a -> k (fl a))
+push :: (Stacked m) => a -> m i (a -> i) ()
+push a = shift_ $ \k fl -> pure (k (const fl) a)
+
+pop_ :: (Stacked m) => m (a -> i) i ()
+pop_ = shift_ $ \k fl -> pure (\a -> k (fl a))
 
 some :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m ([a] -> r) r [b]
 some a = Control.Monad.Indexed.do
@@ -80,7 +83,7 @@ some a = Control.Monad.Indexed.do
     uncons _fl k (x : xs) = k x xs
 
 many :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m ([a] -> r) r [b]
-many a = some a <|> (pop' *> pure [])
+many a = some a <|> (pop_ *> pure [])
 
 newtype IgnoreStack m i j a = IgnoreStack {unIgnoreStack :: m a}
   deriving newtype

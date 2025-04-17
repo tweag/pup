@@ -30,6 +30,9 @@ instance (Comonad w) => Indexed.Monad (Cont2W w) where
 shift :: (Comonad w) => (w (a -> r' -> r') -> r -> Cont2W w r k k) -> Cont2W w r r' a
 shift f = Cont2W $ \wk fl -> runCont2W (f wk fl) ((\_k -> \x _ -> x) <$> wk) fl
 
+pop :: (Comonad w) => Cont2W w (a -> i) i a
+pop = shift $ \wk fl -> pure (\a -> extract wk a (fl a))
+
 run :: (Comonad w) => (w (a -> r) -> r) -> Cont2W w r r a
 run act = shift $ \wk fl -> Indexed.pure $ act (fmap (\k x -> k x fl) wk)
 

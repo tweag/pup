@@ -15,8 +15,9 @@ print :: forall r a. (Indexed.Unroll r (Maybe String)) => Print r (Maybe String)
 print prnt = Cont2.runCont2W prnt (Comonad.traced (\s _ _ -> Just s)) (Indexed.unroll @r @(Maybe String) Nothing)
 
 anyChar :: Print (Char -> r) r Char
-anyChar =
-  Cont2.shift $ \wk fl -> Indexed.pure $ \c -> Comonad.runTraced wk [c] c (fl c)
+anyChar = Indexed.do
+  c <- Cont2.pop
+  Cont2.run $ \wk -> Comonad.trace [c] wk c
 
 once :: (r -> r') -> Print r r' a -> Print r r' a
 once unr prnt = Cont2.shift $ \wk fl -> Indexed.do
