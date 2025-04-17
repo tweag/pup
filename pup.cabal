@@ -22,7 +22,6 @@ library
     Control.Monad.Indexed
     Control.Monad.Indexed.Cont
     Control.Monad.Indexed.Cont2
-    Examples
     Generic
   other-modules:
     Paths_pup
@@ -33,4 +32,20 @@ library
     base,
     comonad,
     mtl
+  default-language: GHC2021
+
+test-suite all
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  other-modules:
+    Paths_pup
+  hs-source-dirs:
+    test
+  ghc-options: -Wall
+  build-depends:
+    base,
+    comonad,
+    hedgehog,
+    mtl,
+    pup
   default-language: GHC2021

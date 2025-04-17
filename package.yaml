@@ -14,4 +14,12 @@ dependencies:
 library:
   source-dirs: src
 
+tests:
+  all:
+    main: Test.hs
+    source-dirs: test
+    dependencies:
+      - pup
+      - hedgehog
+
 ghc-options: "-Wall"
