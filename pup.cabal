@@ -20,6 +20,8 @@ library
     Base.Print
     Combinators
     Control.Monad.Indexed
+    Control.Monad.Indexed.Cont
+    Control.Monad.Indexed.Cont2
     Examples
     Generic
   other-modules:
@@ -29,5 +31,6 @@ library
   ghc-options: -Wall
   build-depends:
     base,
+    comonad,
     mtl
   default-language: GHC2021
