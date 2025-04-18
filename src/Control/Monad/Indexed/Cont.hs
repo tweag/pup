@@ -4,6 +4,7 @@
 module Control.Monad.Indexed.Cont where
 
 import Control.Comonad
+import Control.Comonad.Hoist.Class
 import Control.Comonad.Store
 import Control.Comonad.Weave
 import Control.Monad.Indexed qualified as Indexed
@@ -29,6 +30,14 @@ shift f = ContW $ \wk -> runContW (f wk) (const id <$> wk)
 handle :: (Comonad w) => ContW (StoreT k w) r r' a -> ContW w k r' a -> ContW w r r' a
 handle (ContW inner) (ContW handler) =
   ContW $ \wk -> inner (StoreT (const <$> wk) (handler wk))
+
+pullback :: (Comonad w) => (forall x. w x -> v x) -> ContW v r r' a -> ContW w r r' a
+pullback f (ContW a) = ContW $ \wk -> a (f wk)
+
+-- This isn't what we want though, we want to change the type `k` to be
+-- arbitrary in the returned computation.
+once :: (Comonad w) => ContW (StoreT k w) r r' a -> ContW (StoreT k w) r r' a
+once a = handle (pullback (cohoist lower) a) empty
 
 run :: (Comonad w) => (w (a -> r) -> r) -> ContW w r r a
 run act = shift $ Indexed.pure . act
