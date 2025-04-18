@@ -4,6 +4,7 @@
 module Control.Monad.Indexed.Cont where
 
 import Control.Comonad
+import Control.Comonad.Store
 import Control.Comonad.Weave
 import Control.Monad.Indexed qualified as Indexed
 
@@ -24,6 +25,10 @@ instance (Comonad w) => Indexed.Monad (ContW w) where
 
 shift :: (Comonad w) => (w (a -> r') -> ContW w r k k) -> ContW w r r' a
 shift f = ContW $ \wk -> runContW (f wk) (const id <$> wk)
+
+handle :: (Comonad w) => ContW (StoreT k w) r r' a -> ContW w k r' a -> ContW w r r' a
+handle (ContW inner) (ContW handler) =
+  ContW $ \wk -> inner (StoreT (const <$> wk) (handler wk))
 
 run :: (Comonad w) => (w (a -> r) -> r) -> ContW w r r a
 run act = shift $ Indexed.pure . act
