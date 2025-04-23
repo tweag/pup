@@ -1,0 +1,35 @@
+@article{reflect-random,
+  author = {Goldstein, Harrison and Frohlich, Samantha and Wang, Meng and Pierce, Benjamin C.},
+  title = {Reflecting on Random Generation},
+  year = {2023},
+  issue_date = {August 2023},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {7},
+  number = {ICFP},
+  url = {https://doi.org/10.1145/3607842},
+  doi = {10.1145/3607842},
+  abstract = {Expert users of property-based testing often labor to craft random generators that encode detailed knowledge about what it means for a test input to be valid and interesting. Fortunately, the fruits of this labor can also be put to other uses. In the bidirectional programming literature, for example, generators have been repurposed as validity checkers, while Python's Hypothesis library uses the same structures for shrinking and mutating test inputs.
+
+  To unify and generalize these uses and many others, we propose reflective generators, a new foundation for random data generators that can "reflect" on an input value to calculate the random choices that could have been made to produce it. Reflective generators combine ideas from two existing abstractions: free generators and partial monadic profunctors. They can be used to implement and enhance the aforementioned shrinking and mutation algorithms, generalizing them to work for any values that can be produced by the generator, not just ones for which a trace of the generator's execution is available. Beyond shrinking and mutation, reflective generators generalize a published algorithm for example-based generation, and they can also be used as checkers, partial value completers, and other kinds of test data producers.},
+  journal = {Proc. ACM Program. Lang.},
+  month = aug,
+  articleno = {200},
+  numpages = {34},
+  keywords = {bidirectional programming, property-based testing, random generation}
+}
+
+@InProceedings{monadic-profunctors,
+  author="Xia, Li-yao
+  and Orchard, Dominic
+  and Wang, Meng",
+  editor="Caires, Lu{\'i}s",
+  title="Composing Bidirectional Programs Monadically",
+  booktitle="Programming Languages and Systems",
+  year="2019",
+  publisher="Springer International Publishing",
+  address="Cham",
+  pages="147--175",
+  abstract="Software frequently converts data from one representation to another and vice versa. Na{\"i}vely specifying both conversion directions separately is error prone and introduces conceptual duplication. Instead, bidirectional programming techniques allow programs to be written which can be interpreted in both directions. However, these techniques often employ unfamiliar programming idioms via restricted, specialised combinator libraries. Instead, we introduce a framework for composing bidirectional programs monadically, enabling bidirectional programming with familiar abstractions in functional languages such as Haskell. We demonstrate the generality of our approach applied to parsers/printers, lenses, and generators/predicates. We show how to leverage compositionality and equational reasoning for the verification of round-tripping properties for such monadic bidirectional programs.",
+  isbn="978-3-030-17184-1"
+}
