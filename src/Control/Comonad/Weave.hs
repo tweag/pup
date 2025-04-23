@@ -14,6 +14,6 @@ class (Comonad w) => Weave w r where
   exit :: w a -> r
   weave :: (w a -> r) -> (w a -> r) -> w a -> r
 
-instance (Comonad w) => Weave (Comonad.StoreT s w) s where
+instance (Comonad w, s ~ k) => Weave (Comonad.StoreT s w) k where
   exit wa = snd (Comonad.runStoreT wa)
   (kwl `weave` kwr) (Comonad.StoreT k s) = kwl (Comonad.StoreT k (kwr (Comonad.StoreT k s)))
