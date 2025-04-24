@@ -1,6 +1,6 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE QualifiedDo #-}
 
 module Control.Monad.Indexed.Cont where
 
@@ -28,12 +28,13 @@ instance (Comonad w) => Indexed.Monad (ContW w) where
 shift :: (Comonad w) => (w (a -> r') -> ContW w r k k) -> ContW w r r' a
 shift f = ContW $ \wk -> runContW (f wk) (const id <$> wk)
 
-abort :: Comonad w => r -> ContW w r r' a
+abort :: (Comonad w) => r -> ContW w r r' a
 abort a = shift $ \_ -> Indexed.pure a
 
 -- reset1 :: _ -- (Comonad w) => ContW w r r' r' -> ContW w r r r
-capture :: Comonad w => ContW w b r' r' -> ContW w r r (w b)
+capture :: (Comonad w) => ContW w b r' r' -> ContW w r r (w b)
 capture (ContW a) = ContW $ \wk -> extract wk (a `extend` (const id <$> wk))
+
 -- reset1 a = a Indexed.>>= (ContW id)
 -- reset1 (ContW a) = ContW $ \wk -> wk (a id)
 
