@@ -96,7 +96,11 @@
 \section{Related work}
 
 \begin{itemize}
-\item Where it all started \cite{functional-unparsing}
+\item Where it all started \cite{functional-unparsing}. See also a
+  more direct link to delimited control
+  \cite{typed-functional-unparsing}.
+\item Pattern combinators which use continuation for flattening. Very
+  similar to functional unparsing \cite{pattern-combinators}
 \item Scanf in Danvy style \cite{functional-ununparsing}
 \item Foundational work on deep delimited control \cite{shift0}
 \item Typed accounts of delimited continuation with answer-type
@@ -105,11 +109,57 @@
   \cite{monadic-profunctors}. One lesson we can learn from this is
   that parsing is easy (in all their example one of the sides is
   easy). The difficult bit is to build a printer type which will align
-  with the parser type.
-\item Use partial monadic profunctor technique for random generators \cite{reflect-random}
+  with the parser type. Before that, the notion of partial isomorphism
+  was proposed \cite{partial-isomorphism}, it was a first, less
+  ergonomic, step.
+  \begin{itemize}
+  \item Use partial monadic profunctor techniques for random
+    generators \cite{reflect-random}. This paper demonstrates the
+    alternative combinators, which Arnaud didn't find in the original
+    partial monadic profunctor paper.
+  \end{itemize}
+\item Correct-by-construction biparsers used for exact printing
+  \cite{biparser-exact-print}. This are arrow (or arrow-like)
+  combinators. The API demonstrated in the article is in Agda, and
+  combinators have proof obligations (search, \emph{e.g.} for
+  \verb+AlignConsistent+). But they claim a Haskell library too. I
+  don't know if the Haskell library is just as
+  correct-by-construction. Parsers are parameterised by two return
+  types: the type of data, and the “complement” which consists at
+  least of the span/position data for exact printing (they equate this
+  data/complement duality to the parser returning a lens, delightful
+  stuff). It also has a pretty comprehensive related work section.
+\item A biparser DSL (called \emph{BiYacc} but the relation to Yacc is
+  rather tenuous) \cite{biyacc}. The technical device seems to be the
+  definition of both AST and CST as inputs of a biparser. Then the
+  translations between AST and CST is written in a style where it can
+  be read as pattern matching left-to-right and
+  right-to-left. Biparsers are compiled to lenses (the fact that
+  they're lenses and not isomorphism-like structure seems important,
+  why?). Not quite to combinators, though, it's a little more complex
+  than that. The target is a language for lenses called
+  BiGUL~\cite{bigul}. Why lenses? Because it allows to reason
+  compositionaly about correctness. Whereas
+  in~\cite{monadic-profunctors}, where the parser and printer are
+  essentially independent, it's a little more difficult.
+\item Only tangentially related
+  \begin{itemize}
+  \item Recent work on parser combinators
+    \cite{parsley,parsec-design-patterns}.
+  \item A language whose semantics is so-called parameterised
+    isomorphisms~\cite{parameterised-isomorphism}. Basically, the
+    language has a regular type of arrows and a type of
+    isomorphism. Everything is fairly natural in there, except the
+    invertible \verb+case+ expressions, which feel frankly magical,
+    but aren't explained in details because they come from previous
+    work (of which there seems to be plenty!).
+  \end{itemize}
 \end{itemize}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{bibliography}{}
 
 \end{document}
+
+% LocalWords:  combinators Parsers compositionaly invertible
+% LocalWords:  isomorphisms
