@@ -5,6 +5,8 @@
 module Main where
 
 import Combinators
+import Data.List qualified as List
+import Data.Maybe qualified as Maybe
 import Control.Monad
 import Control.Monad.Indexed ((<*), (<*>), (<|>))
 import Control.Monad.Indexed qualified as Indexed
@@ -24,11 +26,14 @@ import Prelude qualified
 -------------------------------------------------------------------------------
 
 roundTrip :: (Monad m, Eq a, Show a) => PUP (a -> Maybe String) (Maybe String) a -> a -> PropertyT m ()
-roundTrip pp a = a' === Just (a, "")
-  where
-    a' = do
-      str <- Combinators.print pp a
-      Combinators.parse pp str
+roundTrip pp a =
+  case Combinators.print pp a of
+    Nothing -> do
+      Hedgehog.annotate "Couldn't print"
+      Nothing === Just (a, "")
+    Just str -> do
+      Hedgehog.annotate $ "The printed string: " ++ str
+      Combinators.parse pp str === Just (a, "")
 
 -------------------------------------------------------------------------------
 --
@@ -118,8 +123,119 @@ prop_print_bktrk_once = property $ do
   Combinators.print (bktrk_once True) === Just "True"
   Combinators.print (bktrk_once False) === Nothing
 
+-------------------------------------------------------------------------------
+--
+-- Pupping Sexprs
+--
+-------------------------------------------------------------------------------
+
+data SExpr
+  = SList [SExpr]
+  | SSymb String
+  | SStr String
+  | SInt Int
+  deriving (Generic, Show, Eq)
+
+whitespace :: PUP (Char -> r) r Char
+whitespace = Indexed.do
+  c <- anyChar
+  guard $ List.elem c [' ', '\n']
+  Indexed.pure c
+
+ws :: PUP r r ()
+ws = void $ Indexed.many whitespace Indexed.@ " "
+
+puntil :: (a -> Bool) -> (forall r'. PUP (a -> r') r' a) -> PUP ([a] -> r) r [a]
+puntil p pup = Indexed.many $ Indexed.do
+  a <- pup
+  guard $ not (p a)
+  Indexed.pure a
+
+-- A simple s-expr parser, doesn't handle escaped characters in strings
+sexpr :: PUP (SExpr -> r) r SExpr
+sexpr =
+  lead @"SList" <* string "(" <* ws <*> Indexed.many (sexpr <* ws) <* string ")" <* ws
+  <|> lead @"SSymb" <*> symbol
+  <|> lead @"SInt" <*> int
+  <|> lead @"SStr" <* string "\"" <*> puntil (== '"') anyChar  <* string "\""
+  where
+    symbol :: forall r'. PUP (String -> r') r' String
+    symbol = lead @":" <*> symbol_lead <*> Indexed.many symbol_other
+
+    symbol_lead :: forall r'. PUP (Char -> r') r' Char
+    symbol_lead = Indexed.do
+      c <- anyChar
+      guard $ List.elem c $ ':' : ['a'..'z'] ++ ['A'..'Z']
+      Indexed.pure c
+    symbol_other :: forall r'. PUP (Char -> r') r' Char
+    symbol_other = Indexed.do
+      c <- anyChar
+      guard $ List.elem c $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ ['-']
+      Indexed.pure c
+
+reprintSexpr :: String -> IO ()
+reprintSexpr str = do
+  case Combinators.parse sexpr str of
+    Nothing -> putStrLn "Sexp: parse error"
+    Just (expr,_) -> putStrLn $ Maybe.fromJust (Combinators.print sexpr expr)
+  putStrLn ""
+
+a_small_sexpr :: String
+a_small_sexpr = "((abstr 57 :tag) \"this is nested\")"
+
+-- Modified Emacs Lisp
+a_sexpr :: String
+a_sexpr = "(ert-deftest company-shows-keywords-alongside-completions-alphabetically () \
+  \  :tags (company) \
+  \  (switch-to-buffer \"*TESTING COMPANY MODE ~ Python*\") \
+  \  (python-mode) \
+  \  \
+  \  \
+  \  (erase-buffer)\
+  \  (insert \" def first(x): pass\")\
+  \  (insert \" def fierce(a, b): pass\")\
+  \  \
+  \  \
+  \  (insert \" fi\")\
+  \  (company-manual-begin)\
+  \  (should (equal company-candidates (\"fierce\" \"first\" (\"finally\" 0 7 (company-backend company-keywords)))))\
+  \  \
+  \  \
+  \  (execute-kbd-macro (kbd \"C-g C-/ M-2\"))\ 
+  \  (should (looking-back \"finally\"))\
+  \  \
+  \  (kill-buffer))"
+
+genSexpr :: (MonadGen m) => m SExpr
+genSexpr =
+  Gen.recursive Gen.choice
+    [
+      SSymb Prelude.<$> genSymb,
+      SInt Prelude.<$> Gen.int (Range.linear 0 100),
+      SStr Prelude.<$> Gen.string (Range.linear 0 30) Gen.alphaNum
+    ]
+    [
+      SList Prelude.<$> Gen.list (Range.linear 0 7) genSexpr
+    ]
+  where
+    genSymb = (:) <$> Gen.alpha Prelude.<*> Gen.string (Range.linear 0 15) Gen.alphaNum
+  
+prop_round_trip_sexpr :: Property
+prop_round_trip_sexpr = property $ do
+  x <- forAll genSexpr
+  roundTrip sexpr x
+
+-------------------------------------------------------------------------------
+--
+-- Running tests
+--
+-------------------------------------------------------------------------------
+
 main :: IO ()
-main = Hedgehog.defaultMain [tests]
+main = do
+  reprintSexpr a_small_sexpr
+  reprintSexpr a_sexpr
+  Hedgehog.defaultMain [tests]
 
 tests :: IO Bool
 tests = checkParallel $$(discover)

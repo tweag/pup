@@ -35,9 +35,13 @@ lead = Indexed.do
 --
 ------------------------------------------------------------------------------
 
-instance (Generic t, GLeading c (Rep t) ()) => Leading c t where
+instance (Generic t, Defined (Rep t) (TypeError (NoGeneric t)) (() :: Constraint), GLeading c (Rep t) ()) => Leading c t where
   match fl k t = gmatch @c @(Rep t) @() (fl . to) k (from t)
   unmatch k = gunmatch @c @(Rep t) @() (k . to)
+
+type NoGeneric t = 'Text "No instance for " ':<>: QuoteType (Generic t)
+
+type QuoteType t = 'Text "‘" ':<>: 'ShowType t ':<>: 'Text "’"
 
 type GLeading :: Symbol -> (Type -> Type) -> Type -> Constraint
 class GLeading c rep x where
@@ -135,7 +139,18 @@ type family FieldsType rep tgt where
 type family CFieldsType c rep tgt where
   CFieldsType c rep tgt = FieldsType (FromJust (SelectConstructor c rep)) tgt
 
--- type family StripMetadata (repA :: Type) :: Type where
---   StripMetadata (K1 _ c _) = c
---   StripMetadata (M1 _ _ f p) = StripMetadata (f p)
---   StripMetadata _ = TypeError ('Text "StripMetadata: unexpected representation")
+------------------------------------------------------------------------------
+--
+-- Error messages
+--
+------------------------------------------------------------------------------
+
+-- See https://blog.csongor.co.uk/report-stuck-families/ and
+-- https://hackage.haskell.org/package/generic-lens-core-2.2.1.0/docs/Data-Generics-Internal-Errors.html#t:Defined
+type family Defined (break :: Type -> Type) (err :: Constraint) (a :: k) :: k where
+  Defined Apart _ _ = Daemon
+  Defined _ _ k = k
+
+data Apart a
+
+type family Daemon :: k
