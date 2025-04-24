@@ -5,11 +5,11 @@
 module Main where
 
 import Combinators
-import Data.List qualified as List
-import Data.Maybe qualified as Maybe
 import Control.Monad
 import Control.Monad.Indexed ((<*), (<*>), (<|>))
 import Control.Monad.Indexed qualified as Indexed
+import Data.List qualified as List
+import Data.Maybe qualified as Maybe
 import GHC.Generics
 import Generic (lead)
 import Hedgehog
@@ -155,9 +155,9 @@ puntil p pup = Indexed.many $ Indexed.do
 sexpr :: PUP (SExpr -> r) r SExpr
 sexpr =
   lead @"SList" <* string "(" <* ws <*> Indexed.many (sexpr <* ws) <* string ")" <* ws
-  <|> lead @"SSymb" <*> symbol
-  <|> lead @"SInt" <*> int
-  <|> lead @"SStr" <* string "\"" <*> puntil (== '"') anyChar  <* string "\""
+    <|> lead @"SSymb" <*> symbol
+    <|> lead @"SInt" <*> int
+    <|> lead @"SStr" <* string "\"" <*> puntil (== '"') anyChar <* string "\""
   where
     symbol :: forall r'. PUP (String -> r') r' String
     symbol = lead @":" <*> symbol_lead <*> Indexed.many symbol_other
@@ -165,19 +165,19 @@ sexpr =
     symbol_lead :: forall r'. PUP (Char -> r') r' Char
     symbol_lead = Indexed.do
       c <- anyChar
-      guard $ List.elem c $ ':' : ['a'..'z'] ++ ['A'..'Z']
+      guard $ List.elem c $ ':' : ['a' .. 'z'] ++ ['A' .. 'Z']
       Indexed.pure c
     symbol_other :: forall r'. PUP (Char -> r') r' Char
     symbol_other = Indexed.do
       c <- anyChar
-      guard $ List.elem c $ ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ ['-']
+      guard $ List.elem c $ ['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ ['-']
       Indexed.pure c
 
 reprintSexpr :: String -> IO ()
 reprintSexpr str = do
   case Combinators.parse sexpr str of
     Nothing -> putStrLn "Sexp: parse error"
-    Just (expr,_) -> putStrLn $ Maybe.fromJust (Combinators.print sexpr expr)
+    Just (expr, _) -> putStrLn $ Maybe.fromJust (Combinators.print sexpr expr)
   putStrLn ""
 
 a_small_sexpr :: String
@@ -185,7 +185,8 @@ a_small_sexpr = "((abstr 57 :tag) \"this is nested\")"
 
 -- Modified Emacs Lisp
 a_sexpr :: String
-a_sexpr = "(ert-deftest company-shows-keywords-alongside-completions-alphabetically () \
+a_sexpr =
+  "(ert-deftest company-shows-keywords-alongside-completions-alphabetically () \
   \  :tags (company) \
   \  (switch-to-buffer \"*TESTING COMPANY MODE ~ Python*\") \
   \  (python-mode) \
@@ -201,25 +202,24 @@ a_sexpr = "(ert-deftest company-shows-keywords-alongside-completions-alphabetica
   \  (should (equal company-candidates (\"fierce\" \"first\" (\"finally\" 0 7 (company-backend company-keywords)))))\
   \  \
   \  \
-  \  (execute-kbd-macro (kbd \"C-g C-/ M-2\"))\ 
+  \  (execute-kbd-macro (kbd \"C-g C-/ M-2\"))\
   \  (should (looking-back \"finally\"))\
   \  \
   \  (kill-buffer))"
 
 genSexpr :: (MonadGen m) => m SExpr
 genSexpr =
-  Gen.recursive Gen.choice
-    [
-      SSymb Prelude.<$> genSymb,
+  Gen.recursive
+    Gen.choice
+    [ SSymb Prelude.<$> genSymb,
       SInt Prelude.<$> Gen.int (Range.linear 0 100),
       SStr Prelude.<$> Gen.string (Range.linear 0 30) Gen.alphaNum
     ]
-    [
-      SList Prelude.<$> Gen.list (Range.linear 0 7) genSexpr
+    [ SList Prelude.<$> Gen.list (Range.linear 0 7) genSexpr
     ]
   where
     genSymb = (:) <$> Gen.alpha Prelude.<*> Gen.string (Range.linear 0 15) Gen.alphaNum
-  
+
 prop_round_trip_sexpr :: Property
 prop_round_trip_sexpr = property $ do
   x <- forAll genSexpr
