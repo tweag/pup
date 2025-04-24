@@ -20,9 +20,7 @@
 }
 
 @InProceedings{monadic-profunctors,
-  author="Xia, Li-yao
-  and Orchard, Dominic
-  and Wang, Meng",
+  author="Xia, Li-yao and Orchard, Dominic and Wang, Meng",
   editor="Caires, Lu{\'i}s",
   title="Composing Bidirectional Programs Monadically",
   booktitle="Programming Languages and Systems",
@@ -32,4 +30,64 @@
   pages="147--175",
   abstract="Software frequently converts data from one representation to another and vice versa. Na{\"i}vely specifying both conversion directions separately is error prone and introduces conceptual duplication. Instead, bidirectional programming techniques allow programs to be written which can be interpreted in both directions. However, these techniques often employ unfamiliar programming idioms via restricted, specialised combinator libraries. Instead, we introduce a framework for composing bidirectional programs monadically, enabling bidirectional programming with familiar abstractions in functional languages such as Haskell. We demonstrate the generality of our approach applied to parsers/printers, lenses, and generators/predicates. We show how to leverage compositionality and equational reasoning for the verification of round-tripping properties for such monadic bidirectional programs.",
   isbn="978-3-030-17184-1"
+}
+
+@article{functional-unparsing,
+  title={Functional unparsing},
+  volume={8},
+  DOI={10.1017/S0956796898003104},
+  number={6},
+  journal={Journal of Functional Programming},
+  author={Danvy, Olivier},
+  year={1998},
+  pages={621–625}
+}
+
+@article{functional-ununparsing,
+  title={Functional un|unparsing},
+  author={Asai, Kenichi and Kiselyov, Oleg and Shan, Chung-chieh},
+  journal={Higher-Order and Symbolic Computation},
+  year={2011},
+  doi={10.1007/s10990-012-9087-2},
+  url={https://doi.org/10.1007/s10990-012-9087-2},
+  abstract={Danvy’s functional unparsing problem (Danvy in J. Funct. Program. 8(6), 621–625, 1998) is to implement a type-safe ‘printf’ function, which converts a sequence of heterogeneous arguments to a string according to a given format. The dual problem is to implement a type-safe ‘scanf’ function, which extracts a sequence of heterogeneous arguments from a string by interpreting (Friedman and Wand in LFP, pp. 348–355, 1984 and in Essentials of Programming Languages, MIT Press, 2008) the same format as an equally heterogeneous sequence of patterns that binds zero or more variables. We derive multiple solutions to both problems (Wand in J. ACM 27(1), 164–180, 1980) from their formal specifications (Wand in Theor. Comput. Sci. 20(1), 3–32, 1982).}
+}
+
+@InProceedings{polymorphic-conts,
+  author="Asai, Kenichi and Kameyama, Yukiyoshi",
+  editor="Shao, Zhong",
+  title="Polymorphic Delimited Continuations",
+  booktitle="Programming Languages and Systems",
+  year="2007",
+  publisher="Springer Berlin Heidelberg",
+  address="Berlin, Heidelberg",
+  pages="239--254",
+  abstract="This paper presents a polymorphic type system for a language with delimited control operators, shift and reset. Based on the monomorphic type system by Danvy and Filinski, the proposed type system allows pure expressions to be polymorphic. Thanks to the explicit presence of answer types, our type system satisfies various important properties, including strong type soundness, existence of principal types and an inference algorithm, and strong normalization. Relationship to CPS translation as well as extensions to impredicative polymorphism are also discussed. These technical results establish the foundation of polymorphic delimited continuations.",
+  isbn="978-3-540-76637-7"
+}
+
+@InProceedings{substructural-delimcc,
+  author="Kiselyov, Oleg and Shan, Chung-chieh",
+  editor="Della Rocca, Simona Ronchi",
+  title="A Substructural Type System for Delimited Continuations",
+  booktitle="Typed Lambda Calculi and Applications",
+  year="2007",
+  publisher="Springer Berlin Heidelberg",
+  address="Berlin, Heidelberg",
+  pages="223--239",
+  abstract="We propose type systems that abstractly interpret small-step rather than big-step operational semantics. We treat an expression or evaluation context as a structure in a linear logic with hypothetical reasoning. Evaluation order is not only regulated by familiar focusing rules in the operational semantics, but also expressed by structural rules in the type system, so the types track control flow more closely. Binding and evaluation contexts are related, but the latter are linear.",
+  isbn="978-3-540-73228-0"
+}
+
+@InProceedings{shift0,
+  author="Materzok, Marek and Biernacki, Dariusz",
+  editor="Jhala, Ranjit and Igarashi, Atsushi",
+  title="A Dynamic Interpretation of the CPS Hierarchy",
+  booktitle="Programming Languages and Systems",
+  year="2012",
+  publisher="Springer Berlin Heidelberg",
+  address="Berlin, Heidelberg",
+  pages="296--311",
+  abstract="The CPS hierarchy of control operators shifti/resetiof Danvy and Filinski is a natural generalization of the shift and reset static control operators that allow for abstracting delimited control in a structured and CPS-guided manner. In this article we show that a dynamic variant of shift/reset, known as shift0/reset0, where the discipline of static access to the stack of delimited continuations is relaxed, can fully express the CPS hierarchy. This result demonstrates the expressive power of shift0/reset0 and it offers a new perspective on practical applications of the CPS hierarchy.",
+  isbn="978-3-642-35182-2"
 }
