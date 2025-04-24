@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \citestyle{acmauthoryear}
 \usepackage[capitalize, noabbrev]{cleveref}
+\usepackage{minted}
 
 %% Rights management information. SAMPLE value until references are given.
 \setcopyright{acmlicensed}
@@ -92,6 +93,29 @@
   Your, Paper}
 
 \maketitle
+
+Sample code block
+\begin{minted}{haskell}
+data T = C Int Bool | D Char Int
+
+parse :: String -> Maybe T
+
+print :: T -> String
+\end{minted}
+
+Sample one-line codeblock
+\mint{haskell}/lead @"C" <$> int <*> bool/
+
+Inline code looks like this \mintinline{haskell}{lead @"D"}. Rest
+ofthe paragraph here.
+
+\begin{listing}
+\begin{minted}{haskell}
+lead @"C" <$> int <*> bool
+<|> lead @"D" <$> char <*> int
+\end{minted}
+\caption{Minted also provides a listing floats to write code in}
+\end{listing}
 
 \section{Related work}
 

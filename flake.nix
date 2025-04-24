@@ -37,7 +37,6 @@
           # Latex stuff
           pkgs.ott
           pkgs.biber
-          pkgs.haskellPackages.lhs2tex
           (pkgs.texlive.combine {
             inherit (pkgs.texlive)
                 scheme-basic
@@ -46,6 +45,10 @@
                 cleveref
                 xargs
                 todonotes
+                minted
+
+                #minted dependencies
+                lineno
 
                 # acmart dependencies
                 amscls
@@ -103,9 +106,6 @@
                 xcolor
                 xkeyval
                 xstring
-
-                # for lhs2tex
-                lazylist polytable
                 ;
             })
         ];
