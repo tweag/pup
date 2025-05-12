@@ -1,5 +1,6 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 
@@ -84,6 +85,29 @@ some a = Control.Monad.Indexed.do
 
 many :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m ([a] -> r) r [b]
 many a = some a <|> (pop_ *> pure [])
+
+optional :: (Stacked m) => (forall r'. m (a -> r') r' b) -> m (Maybe a -> r) r (Maybe b)
+optional a =
+  (justLead <*> a) <|> nothingLead
+  where
+    -- TODO: reorder module so that these can be derived.
+    justLead = Control.Monad.Indexed.do
+      stack (\cases _ k (Just x) -> k x; fl _ b -> fl b) (\k x -> k (Just x))
+      pure Just
+    nothingLead = Control.Monad.Indexed.do
+      stack (\cases _ k Nothing -> k; fl _ b -> fl b) (\k -> k Nothing)
+      pure Nothing
+
+sepBy :: (Stacked m) => (forall r'. m (a -> r') r' b) -> (forall r'. m r' r' ()) -> m ([a] -> r) r [b]
+sepBy p sep = Control.Monad.Indexed.do
+  -- TODO: I don't know whether cheating on the unroll can be a
+  -- problem. Replacing by a direct call to shift would solve that I suppose.
+  stack (\cases _ k (x : xs) -> k (Just x) xs; _ k [] -> k Nothing (error "Why did this not pop?")) (\k _x xs -> k xs)
+  r <- optional p
+  case r of
+    Nothing -> pop_ >> pure []
+    Just x -> Control.Monad.Indexed.do
+      (x :) <$> many (sep *> p)
 
 newtype IgnoreStack m i j a = IgnoreStack {unIgnoreStack :: m a}
   deriving newtype

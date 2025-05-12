@@ -27,20 +27,30 @@ instance (Comonad w) => Indexed.Monad (Cont2W w) where
     where
       k' wk x = runCont2W (f x) wk
 
-shift :: (Comonad w) => (w (a -> r' -> r') -> r -> Cont2W w r k k) -> Cont2W w r r' a
-shift f = Cont2W $ \wk fl -> runCont2W (f wk fl) ((\_k -> \x _ -> x) <$> wk) fl
+shift0 :: (Comonad w) => (w (a -> r' -> r') -> r -> Cont2W w r k k) -> Cont2W w r r' a
+shift0 f = Cont2W $ \wk fl -> runCont2W (f wk fl) ((\_k -> \x _ -> x) <$> wk) fl
 
-pop :: (Comonad w) => Cont2W w (a -> i) i a
-pop = shift $ \wk fl -> pure (\a -> extract wk a (fl a))
+class Indexed.Monad m => Shifty m where
+  shift :: ((a -> r' -> r') -> r -> m r k k) -> m r r' a
+
+instance Comonad w => Shifty (Cont2W w) where
+  shift :: (Comonad w) => ((a -> r' -> r') -> r -> Cont2W w r k k) -> Cont2W w r r' a
+  shift f = shift0 $ \wk -> f (extract wk)
+
+push :: (Shifty m) => a -> m i (a -> i) ()
+push x = shift $ \k fl -> Indexed.pure $ k () (const fl) x
+
+pop :: (Shifty m) => m (a -> i) i a
+pop = shift $ \k fl -> Indexed.pure (\a -> k a (fl a))
 
 run :: (Comonad w) => (w (a -> r) -> r) -> Cont2W w r r a
-run act = shift $ \wk fl -> Indexed.pure $ act (fmap (\k x -> k x fl) wk)
+run act = shift0 $ \wk fl -> Indexed.pure $ act (fmap (\k x -> k x fl) wk)
 
 run' :: (Comonad w) => (forall s. w s -> s) -> Cont2W w r r ()
-run' act = shift $ \wk fl -> Indexed.pure $ act (fmap (\k -> k () fl) wk)
+run' act = shift0 $ \wk fl -> Indexed.pure $ act (fmap (\k -> k () fl) wk)
 
 instance (Comonad w) => Indexed.Stacked (Cont2W w) where
   empty = Cont2W $ \_ fl -> fl
   (Cont2W a) <|> (Cont2W b) = Cont2W $ \wk fl -> a wk (b wk fl)
 
-  shift_ f = shift (\wk -> f (extract (($ ()) <$> wk)))
+  shift_ f = shift (\k -> f (k ()))

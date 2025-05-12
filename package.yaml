@@ -10,6 +10,10 @@ dependencies:
   - base
   - comonad
   - mtl
+  - megaparsec
+  - containers
+  - prettyprinter
+  - text
 
 library:
   source-dirs: src

@@ -21,6 +21,6 @@ anyChar = Indexed.do
   Indexed.pure c
 
 once :: (r -> r') -> Print r r' a -> Print r r' a
-once unr prnt = Cont2.shift $ \wk fl -> Indexed.do
+once unr prnt = Cont2.shift $ \k fl -> Indexed.do
   a <- prnt
-  Indexed.pure $ Comonad.extract wk a (unr fl)
+  Indexed.pure $ k a (unr fl)

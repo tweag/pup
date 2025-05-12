@@ -1,0 +1,201 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QualifiedDo #-}
+{-# LANGUAGE TemplateHaskell #-}
+
+module Test.Best
+  ( tests,
+    reprintSexpr,
+    a_small_sexpr,
+    a_sexpr,
+  )
+where
+
+import Base.Megaparsec qualified as Parse
+import BestPUP
+import Control.Monad hiding (guard)
+import Control.Monad.Indexed ((<*), (<*>), (<|>))
+import Control.Monad.Indexed qualified as Indexed
+import Data.List qualified as List
+import Data.Maybe qualified as Maybe
+import Data.Text (Text)
+import Data.Text qualified as Text
+import GHC.Generics
+import Generic (lead)
+import Hedgehog
+import Hedgehog.Gen qualified as Gen
+import Hedgehog.Range qualified as Range
+import Prettyprinter qualified
+import Prettyprinter.Render.Text qualified as Prettyprinter
+import Prelude hiding (Applicative (..), Monad (..))
+import Prelude qualified
+
+-------------------------------------------------------------------------------
+--
+-- Generic properties of pups
+--
+-------------------------------------------------------------------------------
+
+roundTrip :: forall m a. (Monad m, Eq a, Show a) => PUP (a -> Maybe (Prettyprinter.Doc ())) (Maybe (Prettyprinter.Doc ())) a -> a -> PropertyT m ()
+roundTrip pp a = do
+  doc <- shouldPrint $ BestPUP.print pp a
+  let str = Prettyprinter.renderStrict $ Prettyprinter.layoutPretty Prettyprinter.defaultLayoutOptions doc
+  Hedgehog.annotate $ "The printed doc: " ++ (Text.unpack $ str)
+  BestPUP.parse pp "<test>" str `shouldParseTo` a
+  where
+    shouldPrint :: forall x. Maybe x -> PropertyT m x
+    shouldPrint (Just x) = return x
+    shouldPrint Nothing = Prelude.fail "Couldn't print"
+
+    shouldParseTo :: forall x. (Eq x, Show x) => Either String x -> x -> PropertyT m ()
+    shouldParseTo (Left err) _ = Prelude.fail $ "Failed to parse: " ++ err
+    shouldParseTo (Right x) y = x === y
+
+-------------------------------------------------------------------------------
+--
+-- Simple pups
+--
+-------------------------------------------------------------------------------
+
+-- TODO: a lot could be factored between here and the Simple pup tests
+
+data T = C Int Bool | D Char Bool Int
+  deriving (Show, Generic, Eq)
+
+genT :: (MonadGen m) => m T
+genT = Gen.choice [genC, genD]
+  where
+    genC = C Prelude.<$> Gen.int (Range.linear 0 100) Prelude.<*> Gen.bool
+    genD = D Prelude.<$> Gen.alphaNum Prelude.<*> Gen.bool Prelude.<*> Gen.int (Range.linear 0 100)
+
+uupT :: PUP (T -> r) r T
+uupT =
+  lead @"C" <* string "C" <* space1 <*> int <* space1 <*> bool
+    <|> lead @"D" <* string "D" <* space1 <*> anyChar <* space1 <*> bool <* space1 <*> int
+
+data U = K T Int | L
+  deriving (Show, Generic, Eq)
+
+genU :: (MonadGen m) => m U
+genU = Gen.frequency [(20, genK), (1, genL)]
+  where
+    genK = K Prelude.<$> genT Prelude.<*> Gen.int (Range.linear 0 100)
+    genL = return L
+
+uupU :: PUP (U -> r) r U
+uupU =
+  lead @"K" <* string "K" <* space1 <*> uupT <* space1 <*> int
+    <|> lead @"L" <* string "L"
+
+prop_round_trip_Bool :: Property
+prop_round_trip_Bool = property $ do
+  x <- forAll $ Gen.bool
+  roundTrip bool x
+
+prop_round_trip_Int :: Property
+prop_round_trip_Int = property $ do
+  x <- forAll $ Gen.int (Range.linear 0 100)
+  roundTrip int x
+
+prop_round_trip_T :: Property
+prop_round_trip_T = property $ do
+  x <- forAll genT
+  roundTrip uupT x
+
+prop_round_trip_U :: Property
+prop_round_trip_U = property $ do
+  x <- forAll genU
+  roundTrip uupU x
+
+-------------------------------------------------------------------------------
+--
+-- Pupping Sexprs
+--
+-------------------------------------------------------------------------------
+
+data SExpr
+  = SList [SExpr]
+  | SSymb String
+  | SStr Text
+  | SInt Int
+  deriving (Generic, Show, Eq)
+
+-- A simple s-expr parser, doesn't handle escaped characters in strings
+sexpr :: PUP (SExpr -> r) r SExpr
+sexpr =
+  group (nest 2 (lead @"SList" <* Parse.try (string "(") <* space <*> Parse.try sexpr `Indexed.sepBy` space1 <* space <* string ")"))
+    <|> lead @"SSymb" <*> Parse.try symbol
+    <|> lead @"SInt" <*> Parse.try int
+    <|> lead @"SStr" <* Parse.try (string "\"") <*> Parse.takeWhileP Nothing (/= '"') <* string "\""
+  where
+    symbol :: forall r'. PUP (String -> r') r' String
+    symbol = lead @":" <*> symbol_lead <*> Indexed.many (Parse.try symbol_other)
+
+    symbol_lead :: forall r'. PUP (Char -> r') r' Char
+    symbol_lead = Parse.satisfy (`List.elem` (':' : ['a' .. 'z'] ++ ['A' .. 'Z']))
+    symbol_other :: forall r'. PUP (Char -> r') r' Char
+    symbol_other = Parse.satisfy (`List.elem` (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ ['-']))
+
+reprintSexpr :: Text -> IO ()
+reprintSexpr str = do
+  case parse sexpr "<test>" str of
+    Left e -> putStrLn e
+    Right expr -> do
+      let doc = Maybe.fromJust (BestPUP.print sexpr expr)
+      let str' = Prettyprinter.renderStrict $ Prettyprinter.layoutPretty Prettyprinter.defaultLayoutOptions doc
+      putStrLn $ Text.unpack str'
+  putStrLn ""
+
+a_small_sexpr :: Text
+a_small_sexpr = "((abstr 57 :tag) \"this is nested\")"
+
+-- Modified Emacs Lisp
+a_sexpr :: Text
+a_sexpr =
+  "(ert-deftest company-shows-keywords-alongside-completions-alphabetically () \
+  \  :tags (company) \
+  \  (switch-to-buffer \"*TESTING COMPANY MODE ~ Python*\") \
+  \  (python-mode) \
+  \  \
+  \  \
+  \  (erase-buffer)\
+  \  (insert \" def first(x): pass\")\
+  \  (insert \" def fierce(a, b): pass\")\
+  \  \
+  \  \
+  \  (insert \" fi\")\
+  \  (company-manual-begin)\
+  \  (should (equal company-candidates (\"fierce\" \"first\" (\"finally\" 0 7 (company-backend company-keywords)))))\
+  \  \
+  \  \
+  \  (execute-kbd-macro (kbd \"C-g C-/ M-2\"))\
+  \  (should (looking-back \"finally\"))\
+  \  \
+  \  (kill-buffer))"
+
+genSexpr :: (MonadGen m) => m SExpr
+genSexpr =
+  Gen.recursive
+    Gen.choice
+    [ SSymb Prelude.<$> genSymb,
+      SInt Prelude.<$> Gen.int (Range.linear 0 100),
+      SStr Prelude.<$> (Text.pack <$> Gen.string (Range.linear 0 30) Gen.alphaNum)
+    ]
+    [ SList Prelude.<$> Gen.list (Range.linear 0 7) genSexpr
+    ]
+  where
+    genSymb = (:) <$> Gen.alpha Prelude.<*> Gen.string (Range.linear 0 15) Gen.alphaNum
+
+prop_round_trip_sexpr :: Property
+prop_round_trip_sexpr = property $ do
+  x <- forAll genSexpr
+  roundTrip sexpr x
+
+-------------------------------------------------------------------------------
+--
+-- Collecting tests
+--
+-------------------------------------------------------------------------------
+
+tests :: IO Bool
+tests = checkParallel $$(discover)
