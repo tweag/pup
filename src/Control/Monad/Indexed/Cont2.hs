@@ -30,10 +30,10 @@ instance (Comonad w) => Indexed.Monad (Cont2W w) where
 shift0 :: (Comonad w) => (w (a -> r' -> r') -> r -> Cont2W w r k k) -> Cont2W w r r' a
 shift0 f = Cont2W $ \wk fl -> runCont2W (f wk fl) ((\_k -> \x _ -> x) <$> wk) fl
 
-class Indexed.Monad m => Shifty m where
+class (Indexed.Monad m) => Shifty m where
   shift :: ((a -> r' -> r') -> r -> m r k k) -> m r r' a
 
-instance Comonad w => Shifty (Cont2W w) where
+instance (Comonad w) => Shifty (Cont2W w) where
   shift :: (Comonad w) => ((a -> r' -> r') -> r -> Cont2W w r k k) -> Cont2W w r r' a
   shift f = shift0 $ \wk -> f (extract wk)
 

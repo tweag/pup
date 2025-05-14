@@ -5,8 +5,9 @@
 module Main where
 
 import Hedgehog.Main qualified as Hedgehog
-import Test.Simple qualified as Simple
 import Test.Best qualified as Best
+import Test.Simple qualified as Simple
+
 -------------------------------------------------------------------------------
 --
 -- Running tests

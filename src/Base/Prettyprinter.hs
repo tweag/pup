@@ -1,11 +1,12 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE QualifiedDo #-}
 
 module Base.Prettyprinter where
 
 import Base.Megaparsec
 import Control.Applicative
+import Control.Comonad.Identity
 import Control.Comonad.Traced qualified as Comonad
 import Control.Monad
 import Control.Monad.Indexed qualified as Indexed
@@ -15,7 +16,6 @@ import Data.Text (Text)
 import Prettyprinter qualified
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
-import Control.Comonad.Identity
 
 -- | `e` is a phantom type for the parse error type.
 newtype PPrint e ann r r' a = PPrint (Cont2W (Comonad.Traced (Prettyprinter.Doc ann)) r r' a)
@@ -36,7 +36,7 @@ tell :: Prettyprinter.Doc ann -> PPrint e ann r r ()
 tell doc = PPrint $ Cont2.run' $ Comonad.trace doc
 
 modify :: (Prettyprinter.Doc ann -> Prettyprinter.Doc ann) -> PPrint e ann r r' a -> PPrint e ann r r' a
-modify f (PPrint (Cont2.Cont2W a))= PPrint $ Cont2.Cont2W $ \(Comonad.TracedT (Identity wk)) fl -> a (Comonad.TracedT (Identity (wk . f))) fl
+modify f (PPrint (Cont2.Cont2W a)) = PPrint $ Cont2.Cont2W $ \(Comonad.TracedT (Identity wk)) fl -> a (Comonad.TracedT (Identity (wk . f))) fl
 
 anyChar :: PPrint e ann (Char -> r) r Char
 anyChar = Indexed.do
@@ -71,6 +71,6 @@ instance MonadParsec e Text (PPrint e ann) where
     tell (Prettyprinter.pretty toks)
     Indexed.pure toks
   takeWhile1P _label _pred = Indexed.do
-        toks <- Cont2.pop
-        tell (Prettyprinter.pretty toks)
-        Indexed.pure toks
+    toks <- Cont2.pop
+    tell (Prettyprinter.pretty toks)
+    Indexed.pure toks
