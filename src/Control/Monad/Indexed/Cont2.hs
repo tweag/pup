@@ -46,7 +46,7 @@ pop = shift $ \k fl -> Indexed.pure (\a -> k a (fl a))
 run :: (Comonad w) => (w (a -> r) -> r) -> Cont2W w r r a
 run act = shift0 $ \wk fl -> Indexed.pure $ act (fmap (\k x -> k x fl) wk)
 
-run' :: (Comonad w) => (forall s. w s -> s) -> Cont2W w r r ()
+run' :: (Comonad w) => (w r -> r) -> Cont2W w r r ()
 run' act = shift0 $ \wk fl -> Indexed.pure $ act (fmap (\k -> k () fl) wk)
 
 instance (Comonad w) => Indexed.Stacked (Cont2W w) where
