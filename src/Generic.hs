@@ -1,5 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -24,7 +25,7 @@ class Leading c t where
 
 -- the_constr :: CFieldsType c (Rep t ()) tgt
 
-lead :: forall c t r m. (Leading c t, Indexed.Stacked m) => m (t -> r) (CFieldsType c (Rep t ()) r) (CFieldsType c (Rep t ()) t)
+lead :: forall c t r m. (Leading c t, Indexed.MonadPlus m, Indexed.Stacked m) => m (t -> r) (CFieldsType c (Rep t ()) r) (CFieldsType c (Rep t ()) t)
 lead = Indexed.do
   Indexed.stack (match @c @t @r) (unmatch @c @t @r)
   Indexed.pure $ unmatch @c @t @t id

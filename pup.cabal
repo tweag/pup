@@ -22,6 +22,7 @@ library
     Base.Print
     BestPUP
     Combinators
+    Control.Additive
     Control.Comonad.Weave
     Control.Monad.Indexed
     Control.Monad.Indexed.Cont

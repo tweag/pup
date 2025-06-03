@@ -5,6 +5,8 @@
 module Base.Prettyprinter where
 
 import Base.Megaparsec
+import Control.Additive (Additive)
+import Control.Additive qualified as Additive
 import Control.Applicative
 import Control.Comonad.Identity
 import Control.Comonad.Traced qualified as Comonad
@@ -19,7 +21,7 @@ import Prelude qualified
 
 -- | `e` is a phantom type for the parse error type.
 newtype PPrint e ann r r' a = PPrint (Cont2W (Comonad.Traced (Prettyprinter.Doc ann)) r r' a)
-  deriving newtype (Functor, Indexed.Applicative, Indexed.Monad, Indexed.Stacked, Cont2.Shifty)
+  deriving newtype (Functor, Indexed.Applicative, Indexed.Monad, Indexed.Stacked, Cont2.Shifty, Additive)
 
 deriving newtype instance Prelude.Applicative (PPrint e ann r r)
 
@@ -46,7 +48,7 @@ anyChar = Indexed.do
 
 -- Probably can be generalised beyond text.
 instance MonadParsec e Text (PPrint e ann) where
-  parseError _ = Indexed.empty
+  parseError _ = Additive.empty
   label _ = id
   try = id -- TODO: probably incorrect
   lookAhead = id -- TODO: probably incorrect

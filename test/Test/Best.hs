@@ -13,8 +13,9 @@ where
 
 import Base.Megaparsec qualified as Parse
 import BestPUP
+import Control.Additive ((<|>))
 import Control.Monad hiding (guard)
-import Control.Monad.Indexed ((<*), (<*>), (<|>))
+import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed qualified as Indexed
 import Data.List qualified as List
 import Data.Maybe qualified as Maybe

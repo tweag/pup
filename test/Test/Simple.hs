@@ -11,8 +11,9 @@ module Test.Simple
 where
 
 import Combinators
+import Control.Additive ((<|>))
 import Control.Monad
-import Control.Monad.Indexed ((<*), (<*>), (<|>))
+import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed qualified as Indexed
 import Data.List qualified as List
 import Data.Maybe qualified as Maybe

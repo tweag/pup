@@ -3,6 +3,7 @@
 
 module Control.Monad.Indexed.Cont2 where
 
+import Control.Additive
 import Control.Applicative
 import Control.Comonad
 import Control.Monad
@@ -49,8 +50,9 @@ run act = shift0 $ \wk fl -> Indexed.pure $ act (fmap (\k x -> k x fl) wk)
 run' :: (Comonad w) => (w r -> r) -> Cont2W w r r ()
 run' act = shift0 $ \wk fl -> Indexed.pure $ act (fmap (\k -> k () fl) wk)
 
-instance (Comonad w) => Indexed.Stacked (Cont2W w) where
+instance Additive (Cont2W w r r' a) where
   empty = Cont2W $ \_ fl -> fl
   (Cont2W a) <|> (Cont2W b) = Cont2W $ \wk fl -> a wk (b wk fl)
 
+instance (Comonad w) => Indexed.Stacked (Cont2W w) where
   shift_ f = shift (\k -> f (k ()))

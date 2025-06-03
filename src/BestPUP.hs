@@ -7,8 +7,10 @@ module BestPUP where
 
 import Base.Megaparsec
 import Base.Prettyprinter qualified as Print
+import Control.Additive ((<|>))
+import Control.Additive qualified as Additive
 import Control.Monad (void)
-import Control.Monad.Indexed ((<*), (<|>))
+import Control.Monad.Indexed ((<*))
 import Control.Monad.Indexed qualified as Indexed
 import Data.Char qualified as Char
 import Data.Text (Text)
@@ -32,7 +34,7 @@ parse (_ Indexed.:*: Indexed.IgnoreStack prse) name input =
 
 -- TODO: what should `fail` be more abstractly?
 fail :: String -> PUP r r a
-fail msg = Indexed.empty Indexed.:*: (Indexed.IgnoreStack $ Prelude.fail msg)
+fail msg = Additive.empty Indexed.:*: (Indexed.IgnoreStack $ Prelude.fail msg)
 
 -- | Version of `guard` with an error message.
 guard :: Bool -> String -> PUP r r ()

@@ -8,8 +8,9 @@ import Base.Parse (Parse (..))
 import Base.Parse qualified as Parse
 import Base.Print (Print)
 import Base.Print qualified as Print
+import Control.Additive ((<|>))
 import Control.Monad
-import Control.Monad.Indexed ((<*), (<|>))
+import Control.Monad.Indexed ((<*))
 import Control.Monad.Indexed qualified as Indexed
 import Data.Char qualified as Char
 import Prelude hiding (Applicative (..), Monad (..))

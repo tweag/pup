@@ -1,8 +1,10 @@
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Base.Megaparsec where
 
+import Control.Additive
 import Control.Monad.Indexed qualified as Indexed
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Set (Set)
@@ -14,7 +16,7 @@ import Text.Megaparsec qualified as Megaparsec
 -- Note: doesn't have the reflection/escape hatch primitives because they aren't
 -- implementable for printers. If you need them, you want to act at the parsec
 -- level, not the Pup level.
-class (Megaparsec.Stream s, Indexed.Stacked m) => MonadParsec e s m | m -> e s where
+class (Megaparsec.Stream s, Indexed.MonadPlus m, Indexed.Stacked m) => MonadParsec e s m | m -> e s where
   -- | Stop parsing and report the 'ParseError'. This is the only way to
   -- control position of the error without manipulating the parser state
   -- manually.
@@ -420,7 +422,7 @@ takeRest = takeWhileP Nothing (const True)
 --
 -- @since 6.0.0
 atEnd :: (MonadParsec e s m) => m r r Bool
-atEnd = Megaparsec.option False (True <$ hidden eof)
+atEnd = (True <$ hidden eof) <|> pure False
 {-# INLINE atEnd #-}
 
 ---------------------------------------------------------------------------
