@@ -31,8 +31,8 @@ deriving newtype instance Prelude.Monad (PPrint e ann r r)
 
 deriving newtype instance MonadPlus (PPrint e ann r r)
 
-run :: forall r a e ann. (Indexed.Unroll r (Maybe (Prettyprinter.Doc ann))) => PPrint e ann r (Maybe (Prettyprinter.Doc ann)) a -> r
-run (PPrint prnt) = Cont2.runCont2W prnt (Comonad.traced (\s _ _ -> Just s)) (Indexed.unroll @r @(Maybe (Prettyprinter.Doc ann)) Nothing)
+run :: forall a b e ann. PPrint e ann (a -> Maybe (Prettyprinter.Doc ann)) (Maybe (Prettyprinter.Doc ann)) b -> a -> Maybe (Prettyprinter.Doc ann)
+run (PPrint prnt) = Cont2.runCont2W prnt (Comonad.traced (\s _ _ -> Just s)) (\_ -> Nothing)
 
 tell :: Prettyprinter.Doc ann -> PPrint e ann r r ()
 tell doc = PPrint $ Cont2.run' $ Comonad.trace doc

@@ -11,8 +11,8 @@ import Prelude hiding (Applicative (..), Monad (..))
 
 type Print = Cont2W (Comonad.Traced String)
 
-print :: forall r a. (Indexed.Unroll r (Maybe String)) => Print r (Maybe String) a -> r
-print prnt = Cont2.runCont2W prnt (Comonad.traced (\s _ _ -> Just s)) (Indexed.unroll @r @(Maybe String) Nothing)
+print :: forall a b. Print (a -> Maybe String) (Maybe String) b -> a -> Maybe String
+print prnt = Cont2.runCont2W prnt (Comonad.traced (\s _ _ -> Just s)) (\_ -> Nothing)
 
 anyChar :: Print (Char -> r) r Char
 anyChar = Indexed.do

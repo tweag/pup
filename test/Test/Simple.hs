@@ -92,8 +92,9 @@ prop_round_trip_U = property $ do
 -------------------------------------------------------------------------------
 
 -- An example of backtracking behaviour
-bktrk :: PUP r r ()
+bktrk :: PUP (() -> r) r ()
 bktrk = Indexed.do
+  Indexed.pop_
   b <- Indexed.pure True <|> Indexed.pure False
   guard $ not b
   case b of
@@ -103,7 +104,7 @@ bktrk = Indexed.do
 prop_print_bktrk :: Property
 prop_print_bktrk =
   property $
-    Combinators.print bktrk === Just "False"
+    Combinators.print bktrk () === Just "False"
 
 -- Why does (<|>) backtrack in Print. Because:
 --
@@ -116,8 +117,9 @@ prop_print_bktrk =
 --   k True "" (k False "" fl)
 
 -- Avoiding backtracking
-bktrk_once :: Bool -> PUP r r ()
+bktrk_once :: Bool -> PUP (() -> r) r ()
 bktrk_once b0 = Indexed.do
+  Indexed.pop_
   b <- Combinators.once id (Indexed.pure True <|> Indexed.pure False)
   guard $ b == b0
   case b of
@@ -126,8 +128,8 @@ bktrk_once b0 = Indexed.do
 
 prop_print_bktrk_once :: Property
 prop_print_bktrk_once = property $ do
-  Combinators.print (bktrk_once True) === Just "True"
-  Combinators.print (bktrk_once False) === Nothing
+  Combinators.print (bktrk_once True) () === Just "True"
+  Combinators.print (bktrk_once False) () === Nothing
 
 -------------------------------------------------------------------------------
 --

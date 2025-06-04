@@ -23,7 +23,7 @@ import Prelude qualified
 
 type PUP = Print.PPrint Void () Indexed.:*: Indexed.IgnoreStack (Megaparsec.Parsec Void Text)
 
-print :: (Indexed.Unroll r (Maybe (Prettyprinter.Doc ()))) => PUP r (Maybe (Prettyprinter.Doc ())) a -> r
+print :: PUP (a -> Maybe (Prettyprinter.Doc ())) (Maybe (Prettyprinter.Doc ())) b -> a -> Maybe (Prettyprinter.Doc ())
 print (prnt Indexed.:*: _) = Print.run prnt
 
 parse :: PUP r r' a -> String -> Text -> Either String a
