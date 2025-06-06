@@ -17,6 +17,18 @@ import SelfContained.Shared
 import Prelude hiding (Applicative (..), Monad (..), (<$>))
 import Prelude qualified
 
+class (Stacked m, IxMonad m, forall r r' a. Monoid (m r r' a)) => Descr m where
+  satisfy :: (Char -> Bool) -> m r (Char -> r) Char
+
+instance (Descr f, Descr g) => Descr (f :*: g) where
+  satisfy p = satisfy p :*: satisfy p
+
+instance Descr (Fwd Prs) where
+  satisfy p = Fwd (Prs go)
+    where
+      go (c : s) | p c = Just (c, s)
+      go _ = Nothing
+
 newtype Cont2W w r r' a = Cont2W
   {runCont2W :: w (a -> r -> r) -> r' -> r'}
 
@@ -131,18 +143,16 @@ prismL l = stack rev u *> return (review l)
 
     u k' a = k' (review l a)
 
-type C2 m = (IxMonad m, Stacked m, Descr m, forall r r' a. Monoid (m r r' a))
-
-skip :: (C2 m) => m r r () -> m r r ()
+skip :: (Descr m) => m r r () -> m r r ()
 skip p = (p <* skip p) <> return ()
 
-some :: (C2 m) => (forall r. m r (a -> r) a) -> m r' ([a] -> r') [a]
+some :: (Descr m) => (forall r. m r (a -> r) a) -> m r' ([a] -> r') [a]
 some p = consL <*> p <*> many p
 
-many :: (C2 m) => (forall r. m r (a -> r) a) -> m r' ([a] -> r') [a]
+many :: (Descr m) => (forall r. m r (a -> r) a) -> m r' ([a] -> r') [a]
 many p = some p <> (pop_ *> return [])
 
-lit :: (C2 m) => String -> m r r ()
+lit :: (Descr m) => String -> m r r ()
 lit [] = return ()
 lit (c : cs) =
   push c *> satisfy (== c) >>= \_ -> lit cs
@@ -176,15 +186,15 @@ term =
     <*> term
       <> parens (appL <*> term <* sepSpace <*> term)
 
-varL :: (C2 m) => m (Idnt -> r) (Term -> r) (Idnt -> Term)
+varL :: (Descr m) => m (Idnt -> r) (Term -> r) (Idnt -> Term)
 varL = prismL _Var
   where
     _Var = Prism' {review = Var, preview = \case Var x -> Just x; _ -> Nothing}
 
-absL :: (C2 m) => m (Idnt -> Term -> r) (Term -> r) (Idnt -> Term -> Term)
+absL :: (Descr m) => m (Idnt -> Term -> r) (Term -> r) (Idnt -> Term -> Term)
 absL = stack (\k' k -> \case Abs x u -> k x u; t -> k' t) (\k x u -> k (Abs x u)) *> return Abs
 
-appL :: (C2 m) => m (Term -> Term -> r) (Term -> r) (Term -> Term -> Term)
+appL :: (Descr m) => m (Term -> Term -> r) (Term -> r) (Term -> Term -> Term)
 appL = stack (\k' k -> \case App u v -> k u v; t -> k' t) (\k u v -> k (App u v)) *> return App
 
 -- |

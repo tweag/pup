@@ -58,12 +58,6 @@ instance Prelude.Applicative Prs where
   pure a = Prs \s -> Just (a, s)
   (<*>) = ap
 
-instance Descr (Fwd Prs) where
-  satisfy p = Fwd (Prs go)
-    where
-      go (c : s) | p c = Just (c, s)
-      go _ = Nothing
-
 data (f :*: g) r r' a
   = (:*:) {ifst :: (f r r' a), isnd :: (g r r' a)}
 
@@ -75,14 +69,9 @@ instance
   ~(l :*: r) >>= f =
     (l >>= (ifst . f)) :*: (r >>= (isnd . f))
 
-instance (Descr f, Descr g) => Descr (f :*: g) where
-  satisfy p = satisfy p :*: satisfy p
-
 newtype Fwd m r r' a = Fwd {unFwd :: m a}
 
 instance (Prelude.Monad m) => IxMonad (Fwd m) where
   return x = Fwd (Prelude.return x)
   (Fwd a) >>= f = Fwd (a Prelude.>>= (unFwd . f))
 
-class Descr m where
-  satisfy :: (Char -> Bool) -> m r (Char -> r) Char

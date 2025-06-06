@@ -47,6 +47,18 @@ instance
 instance (Prelude.Monad m) => Stacked (Fwd m) where
   shift_ _f = Fwd (Prelude.return ())
 
+class (Stacked m, IxMonad m) => Descr m where
+  satisfy :: (Char -> Bool) -> m r (Char -> r) Char
+
+instance (Descr f, Descr g) => Descr (f :*: g) where
+  satisfy p = satisfy p :*: satisfy p
+
+instance Descr (Fwd Prs) where
+  satisfy p = Fwd (Prs go)
+    where
+      go (c : s) | p c = Just (c, s)
+      go _ = Nothing
+
 newtype ContT m r r' a
   = ContT {runContT :: (a -> m r) -> m r'}
 
@@ -91,20 +103,18 @@ instance (ComTraced String w) => Descr (ContW w) where
 
 type D = Fwd Prs :*: ContW (Traced String)
 
-type C m = (IxMonad m, Stacked m, Descr m)
-
-lit :: (C m) => String -> m r r ()
+lit :: (Descr m) => String -> m r r ()
 lit [] = return ()
 lit (c : cs) =
   push c *> satisfy (== c) >>= \_ -> lit cs
 
-char :: (C m) => m r (Char -> r) Char
+char :: (Descr m) => m r (Char -> r) Char
 char = satisfy (const True)
 
-digit :: (C m) => m r (Int -> r) Int
+digit :: (Descr m) => m r (Int -> r) Int
 digit = return (\c -> read [c]) <* stack (\k -> k . head . show) <*> satisfy isDigit
 
-spec :: (C m) => m r (Int -> Char -> Char -> r) (Int, Char, Char)
+spec :: (Descr m) => m r (Int -> Char -> Char -> r) (Int, Char, Char)
 spec = (,,) <$> digit <* lit "-th character after " <*> char <* lit " is " <*> char
 
 -- | Ex:
