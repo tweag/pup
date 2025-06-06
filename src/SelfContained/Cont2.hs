@@ -91,9 +91,6 @@ push x = shift_ \k k' -> return (k (\_ -> k') x)
 pop_ :: (Stacked m) => m r (a -> r) ()
 pop_ = shift_ \k k' -> return (\a -> k (k' a))
 
-(@) :: (IxMonad m, Stacked m) => m r (a -> r') b -> a -> m r r' b
-m @ a = shift_ (\k k' -> return (k (\_ -> k') a)) *> m
-
 stack ::
   (Stacked m) =>
   (r' -> r -> r') ->
@@ -148,7 +145,7 @@ many p = some p <> (pop_ *> return [])
 lit :: (C2 m) => String -> m r r ()
 lit [] = return ()
 lit (c : cs) =
-  satisfy (== c) @ c >>= \_ -> lit cs
+  push c *> satisfy (== c) >>= \_ -> lit cs
 
 letter = satisfy (\c -> isLetter c && isAscii c)
 

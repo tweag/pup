@@ -18,9 +18,6 @@ push a = shift_ \k -> return (k a)
 pop_ :: (IxMonad m, Stacked m) => m r (a -> r) ()
 pop_ = shift_ \k -> return (\_a -> k)
 
-(@) :: (IxMonad m, Stacked m) => m r (a -> r') b -> a -> m r r' b
-m @ a = shift_ (\k -> return (k a)) *> m
-
 stack :: (IxMonad m, Stacked m) => (r -> r') -> m r r' ()
 stack f = shift_ \k -> return (f k)
 
@@ -99,7 +96,7 @@ type C m = (IxMonad m, Stacked m, Descr m)
 lit :: (C m) => String -> m r r ()
 lit [] = return ()
 lit (c : cs) =
-  satisfy (== c) @ c >>= \_ -> lit cs
+  push c *> satisfy (== c) >>= \_ -> lit cs
 
 char :: (C m) => m r (Char -> r) Char
 char = satisfy (const True)
