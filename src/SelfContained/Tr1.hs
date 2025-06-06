@@ -4,8 +4,8 @@ module SelfContained.Tr1 where
 
 import Control.Category
 import Control.Comonad
-import Control.Comonad.Store
-import Control.Comonad.Traced
+-- import Control.Comonad.Store
+-- import Control.Comonad.Traced
 import Prelude hiding (id, (.))
 
 -- data (p :*: q) r r' = (:*:) {cfst :: p r r', csnd :: q r r'}
@@ -97,8 +97,8 @@ switchw f = Flp $ Cokleisli $ \k k' -> extract k (\a -> runCokleisli (unFlp (f a
 
 newtype Pr r r' o o' = Pr {unPr :: (o' -> r) -> (o -> r')}
 
-switchd :: (a -> Pr r r' o o') -> Pr r r' o (a -> o')
-switchd f = Pr $ \k ok -> _
+-- switchd :: (a -> Pr r r' o o') -> Pr r r' o (a -> o')
+-- switchd f = Pr $ \k ok -> _
 
 -- class Switching p where
 --   switch :: (a -> p r r') -> p r (a -> r')
