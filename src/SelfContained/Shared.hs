@@ -4,7 +4,6 @@
 
 module SelfContained.Shared where
 
-import Control.Monad (ap)
 import Prelude hiding (Applicative (..), Monad (..), (<$>))
 import Prelude qualified
 
@@ -43,20 +42,6 @@ class (Comonad w) => ComTraced m w where
 
 instance (Monoid m) => ComTraced m (Traced m) where
   trace x (Traced f) = f x
-
-newtype Prs a
-  = Prs {runPrs :: String -> Maybe (a, String)}
-  deriving (Functor)
-
-instance Prelude.Monad Prs where
-  -- return a = Prs \s -> Just (a, s)
-  (Prs p) >>= f = Prs \s -> do
-    ~(a, s') <- p s
-    runPrs (f a) s'
-
-instance Prelude.Applicative Prs where
-  pure a = Prs \s -> Just (a, s)
-  (<*>) = ap
 
 data (f :*: g) r r' a
   = (:*:) {ifst :: (f r r' a), isnd :: (g r r' a)}

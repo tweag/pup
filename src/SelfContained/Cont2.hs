@@ -11,11 +11,31 @@
 module SelfContained.Cont2 where
 
 import Control.Applicative (Alternative (empty, (<|>)))
-import Control.Monad (MonadPlus)
+import Control.Monad (MonadPlus, ap)
 import Data.Char (isAlphaNum, isAscii, isLetter)
 import SelfContained.Shared
 import Prelude hiding (Applicative (..), Monad (..), (<$>))
 import Prelude qualified
+
+newtype Pa a
+  = Pa {runPa :: String -> Maybe (a, String)}
+  deriving (Functor)
+
+instance Prelude.Monad Pa where
+  -- return a = Pa \s -> Just (a, s)
+  (Pa p) >>= f = Pa \s -> do
+    ~(a, s') <- p s
+    runPa (f a) s'
+
+instance Prelude.Applicative Pa where
+  pure a = Pa \s -> Just (a, s)
+  (<*>) = ap
+
+instance MonadPlus Pa
+
+instance Alternative Pa where
+  empty = Pa \_ -> empty
+  (Pa pa1) <|> (Pa pa2) = Pa \s -> pa1 s <|> pa2 s
 
 class (Stacked m, IxMonad m, forall r r' a. Monoid (m r r' a)) => Descr m where
   satisfy :: (Char -> Bool) -> m r (Char -> r) Char
@@ -23,8 +43,8 @@ class (Stacked m, IxMonad m, forall r r' a. Monoid (m r r' a)) => Descr m where
 instance (Descr f, Descr g) => Descr (f :*: g) where
   satisfy p = satisfy p :*: satisfy p
 
-instance Descr (Fwd Prs) where
-  satisfy p = Fwd (Prs go)
+instance Descr (Fwd Pa) where
+  satisfy p = Fwd (Pa go)
     where
       go (c : s) | p c = Just (c, s)
       go _ = Nothing
@@ -65,12 +85,6 @@ instance (MonadPlus m) => Monoid (Fwd m r r' a) where
 
 instance (MonadPlus m) => Semigroup (Fwd m r r' a) where
   (Fwd a) <> (Fwd b) = Fwd (a <|> b)
-
-instance MonadPlus Prs
-
-instance Alternative Prs where
-  empty = Prs \_ -> empty
-  (Prs pa1) <|> (Prs pa2) = Prs \s -> pa1 s <|> pa2 s
 
 instance
   (Monoid (f r r' a), Monoid (g r r' a)) =>
@@ -164,7 +178,7 @@ alphaNum = satisfy (\c -> isAlphaNum c && isAscii c)
 parens :: D2 r r' a -> D2 r r' a
 parens p = lit "(" *> p <* lit ")"
 
-sepSpace = lit " " *> skip (lit " ")
+sepSpace = lit " "
 
 idnt = consL <*> letter <*> many alphaNum
 
@@ -173,7 +187,7 @@ type Idnt = String
 data Term = Var Idnt | Abs Idnt Term | App Term Term
   deriving (Show)
 
-type D2 = Fwd Prs :*: Cont2W (Traced String)
+type D2 = Cont2W (Traced String) :*: Fwd Pa
 
 term :: D2 r (Term -> r) Term
 term =
@@ -201,10 +215,10 @@ appL = stack (\k' k -> \case App u v -> k u v; t -> k' t) (\k u v -> k (App u v)
 -- >>> parse term "λx.(x x)"
 -- Just (Abs "x" (App (Var "x") (Var "x")))
 parse :: D2 r r' b -> String -> Maybe b
-parse (Fwd (Prs pa) :*: _) s = fst Prelude.<$> pa s
+parse (_ :*: Fwd (Pa pa)) s = fst Prelude.<$> pa s
 
 -- |
--- >>> pretty term (parse term "λx.(x x)")
--- Just "!$\color{grayred}\lambda$!x.(x x)"
+-- >>> (parse term "λx.(x x)") >>= pretty term
+-- Just "λx.(x x)"
 pretty :: D2 (Maybe String) (a -> Maybe String) b -> a -> Maybe String
-pretty (_ :*: Cont2W pr) = pr (Traced (\s _ _ -> Just s)) (\_ -> Nothing)
+pretty (Cont2W pr :*: _) = pr (Traced (\s _ _ -> Just s)) (\_ -> Nothing)

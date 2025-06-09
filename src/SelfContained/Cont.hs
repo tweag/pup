@@ -1,13 +1,29 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-# OPTIONS_GHC -Wno-x-partial #-}
 
 module SelfContained.Cont where
 
+import Control.Monad (ap)
 import Data.Char (isDigit)
 import SelfContained.Shared
 import Prelude hiding (Applicative (..), Monad (..), (<$>))
 import Prelude qualified
+
+newtype Pa a
+  = Pa {runPa :: String -> (a, String)}
+  deriving (Functor)
+
+instance Prelude.Monad Pa where
+  -- return a = Pa \s -> Just (a, s)
+  (Pa p) >>= f = Pa \s ->
+    let (a, s') = p s
+     in runPa (f a) s'
+
+instance Prelude.Applicative Pa where
+  pure a = Pa \s -> (a, s)
+  (<*>) = ap
 
 class Stacked m where
   shift_ :: (r -> m k r' k) -> m r r' ()
@@ -53,11 +69,10 @@ class (Stacked m, IxMonad m) => Descr m where
 instance (Descr f, Descr g) => Descr (f :*: g) where
   satisfy p = satisfy p :*: satisfy p
 
-instance Descr (Fwd Prs) where
-  satisfy p = Fwd (Prs go)
+instance Descr (Fwd Pa) where
+  satisfy p = Fwd (Pa go)
     where
-      go (c : s) | p c = Just (c, s)
-      go _ = Nothing
+      go (c : s) | p c = (c, s)
 
 newtype ContT m r r' a
   = ContT {runContT :: (a -> m r) -> m r'}
@@ -101,7 +116,7 @@ instance (ComTraced String w) => Descr (ContW w) where
     popw >>= \c ->
       yield (trace [c]) *> return c
 
-type D = Fwd Prs :*: ContW (Traced String)
+type D = ContW (Traced String) :*: Fwd Pa
 
 lit :: (Descr m) => String -> m r r ()
 lit [] = return ()
@@ -121,10 +136,10 @@ spec = (,,) <$> digit <* lit "-th character after " <*> char <* lit " is " <*> c
 -- >>> sprintf spec 5 'a' 'f'
 -- "5-th character after a is f"
 sprintf :: D String r a -> r
-sprintf (_ :*: ContW pr) = pr (Traced (\s _ -> s))
+sprintf (ContW pr :*: _) = pr (Traced (\s _ -> s))
 
 -- | Ex:
 -- >>> sscanf spec "5-th character after a is f"
 -- Just (5, 'a', f')
-sscanf :: D r r' a -> String -> Maybe a
-sscanf (Fwd (Prs pa) :*: _) s = fst Prelude.<$> pa s
+sscanf :: D r r' a -> String -> a
+sscanf (_ :*: Fwd (Pa pa)) s = fst (pa s)
