@@ -204,7 +204,7 @@ parse :: D2 r r' b -> String -> Maybe b
 parse (Fwd (Prs pa) :*: _) s = fst Prelude.<$> pa s
 
 -- |
--- >>> pretty term (parse term "!$\color{grayred}\lambda$!x.(x x)")
+-- >>> pretty term (parse term "λx.(x x)")
 -- Just "!$\color{grayred}\lambda$!x.(x x)"
 pretty :: D2 (Maybe String) (a -> Maybe String) b -> a -> Maybe String
 pretty (_ :*: Cont2W pr) = pr (Traced (\s _ _ -> Just s)) (\_ -> Nothing)
