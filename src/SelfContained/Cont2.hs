@@ -46,7 +46,7 @@ instance (Comonad w) => Semigroup (Cont2W w r r' a) where
     a wk (b wk fl)
 
 shiftw :: (Comonad w) => ((a -> r -> r) -> r' -> Cont2W w k r' k) -> Cont2W w r r' a
-shiftw f = Cont2W \wk k' -> runCont2W (f (extract wk) k') (const (\k _ -> k) `fmap` wk) k'
+shiftw f = Cont2W \wk k' -> runCont2W (f (extract wk) k') (const (\k _ -> k) Prelude.<$> wk) k'
 
 pop :: (Comonad w) => Cont2W w r (a -> r) a
 pop = shiftw \k k' -> return (\a -> k a (k' a))

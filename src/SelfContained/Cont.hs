@@ -74,7 +74,7 @@ newtype ContW w r r' a
   = ContW {runContW :: w (a -> r) -> r'}
 
 shiftw :: (Comonad w) => ((a -> r) -> ContW w k r' k) -> ContW w r r' a
-shiftw f = ContW \wk -> runContW (f (extract wk)) (const id `fmap` wk)
+shiftw f = ContW \wk -> runContW (f (extract wk)) (const id Prelude.<$> wk)
 
 popw :: (Comonad w) => ContW w r (a -> r) a
 popw = shiftw \k -> return (\a -> k a)
@@ -90,11 +90,11 @@ instance (Comonad w) => Stacked (ContW w) where
     -- Notice how the continuation and its
     -- comonadic context are split, but both
     -- are passed to f.
-    runContW (f (extract wk ())) (const id `fmap` wk)
+    runContW (f (extract wk ())) (const id Prelude.<$> wk)
 
 yield :: (Comonad w) => (w r -> r) -> ContW w r r ()
 yield eff = ContW \wk ->
-  (eff ((\k -> k ()) `fmap` wk))
+  (eff ((\k -> k ()) Prelude.<$> wk))
 
 instance (ComTraced String w) => Descr (ContW w) where
   satisfy _ =
