@@ -28,10 +28,6 @@ library
     Control.Monad.Indexed.Cont
     Control.Monad.Indexed.Cont2
     Generic
-    SelfContained.Cont
-    SelfContained.Cont2
-    SelfContained.Shared
-    SelfContained.Tr1
   other-modules:
     Paths_pup
   hs-source-dirs:
