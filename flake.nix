@@ -1,5 +1,5 @@
 {
-  description = "Functional (un)unparsing";
+  description = "Stacked/Pup";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.flake-utils.url = "github:numtide/flake-utils";
@@ -30,86 +30,6 @@
           pkgs.zlib # External C library needed by some Haskell packages
         ];
 
-        latex-dist = [
-          # dev utilities
-          pkgs.entr
-          pkgs.pdftk
-          # Latex stuff
-          pkgs.ott
-          pkgs.biber
-          (pkgs.texlive.combine {
-            inherit (pkgs.texlive)
-                scheme-basic
-                latexmk
-                acmart
-                cleveref
-                xargs
-                todonotes
-                minted
-
-                #minted dependencies
-                lineno
-
-                # acmart dependencies
-                amscls
-                amsfonts
-                amsmath
-                bclogo
-                # for bclogo
-                mdframed
-                zref
-                needspace
-                # supplies binhex:
-                kastrup
-                # supplies balance:
-                preprint
-                booktabs
-                caption
-                comment
-                cm-super
-                cmap
-                doclicense
-                draftwatermark
-                environ
-                etoolbox
-                fancyhdr
-                float
-                fontaxes
-                geometry
-                graphics
-                hyperref
-                hyperxmp
-                iftex
-                # not listed in the documentation, but needed:
-                ifmtarg
-                inconsolata
-                libertine
-                # already supplied by ncctools: manyfoot
-                microtype
-                mmap
-                everyshi
-                mweights
-                natbib
-                ncctools
-                newunicodechar
-                newtx
-                oberdiek
-                # supplies pdftex-def:
-                graphics-def
-                refcount
-                setspace
-                textcase
-                totpages
-                trimspaces
-                upquote
-                url
-                xcolor
-                xkeyval
-                xstring
-                ;
-            })
-        ];
-
         precommit = pre-commit-hooks.lib.${system}.run {
             src = ./.;
             hooks.treefmt.enable = true;
@@ -138,7 +58,7 @@
       in {
 
         devShells.default = pkgs.mkShell {
-          buildInputs = devTools ++ latex-dist;
+          buildInputs = devTools;
 
           # sets up the pre-commit hooks upon entering the dev shell
           inherit (precommit) shellHook;

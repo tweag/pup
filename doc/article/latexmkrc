@@ -1,3 +1,0 @@
-$pdf_mode = "1";
-$pdflatex = "pdflatex -halt-on-error -interaction nonstop -file-line-error";
-$clean_ext = "bbl synctex.gz synctex.gz(busy)";
