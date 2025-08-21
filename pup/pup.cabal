@@ -16,51 +16,47 @@ build-type:     Simple
 
 library
   exposed-modules:
-    Base.Megaparsec
-    Base.Parse
-    Base.Prettyprinter
-    Base.Print
-    BestPUP
-    Combinators
-    Control.Additive
-    Control.Comonad.Weave
-    Control.Monad.Indexed
-    Control.Monad.Indexed.Cont
-    Control.Monad.Indexed.Cont2
-    Generic
+      Base.Megaparsec
+      Base.Parse
+      Base.Prettyprinter
+      Base.Print
+      BestPUP
+      Combinators
   other-modules:
-    Paths_pup
+      Paths_pup
   hs-source-dirs:
-    src
+      src
   ghc-options: -Wall
   build-depends:
-    base,
-    comonad,
-    containers,
-    megaparsec,
-    mtl,
-    prettyprinter,
-    text
+      base
+    , comonad
+    , containers
+    , megaparsec
+    , mtl
+    , prettyprinter
+    , stacked
+    , text
   default-language: GHC2021
 
 test-suite all
   type: exitcode-stdio-1.0
   main-is: Test.hs
   other-modules:
-    Test.Best
-    Test.Simple
-    Paths_pup
+      Test.Best
+      Test.Simple
+      Paths_pup
   hs-source-dirs:
-    test
+      test
   ghc-options: -Wall
   build-depends:
-    base,
-    comonad,
-    containers,
-    hedgehog,
-    megaparsec,
-    mtl,
-    prettyprinter,
-    pup,
-    text
+      base
+    , comonad
+    , containers
+    , hedgehog
+    , megaparsec
+    , mtl
+    , prettyprinter
+    , pup
+    , stacked
+    , text
   default-language: GHC2021
