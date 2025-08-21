@@ -17,12 +17,12 @@ import Control.Additive ((<|>))
 import Control.Monad hiding (guard)
 import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed qualified as Indexed
+import Control.Monad.Indexed.Lead.Generic (lead)
 import Data.List qualified as List
 import Data.Maybe qualified as Maybe
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.Generics
-import Generic (lead)
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
