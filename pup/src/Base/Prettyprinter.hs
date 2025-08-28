@@ -43,12 +43,6 @@ tell doc = PPrint $ Cont2.run' $ Comonad.trace doc
 modify :: (Prettyprinter.Doc ann -> Prettyprinter.Doc ann) -> PPrint e ann r r' a -> PPrint e ann r r' a
 modify f (PPrint (Cont2.Cont2W a)) = PPrint $ Cont2.Cont2W $ \(Comonad.TracedT (Identity wk)) fl -> a (Comonad.TracedT (Identity (wk . f))) fl
 
-anyChar :: PPrint e ann (Char -> r) r Char
-anyChar = Indexed.do
-  c' <- Cont2.pop
-  tell (Prettyprinter.pretty c')
-  Indexed.pure c'
-
 -- Probably can be generalised beyond text.
 instance MonadParsec e Text (PPrint e ann) where
   parseError _ = Additive.empty
