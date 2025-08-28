@@ -1,3 +1,4 @@
+{-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# OPTIONS_GHC -Wno-x-partial #-}
 
@@ -12,6 +13,10 @@ module Base.Megaparsec.Char
     -- * Individual characters
     char,
     anyChar,
+
+    -- * Read and show
+    read,
+    readM,
   )
 where
 
@@ -19,6 +24,9 @@ import Base.Megaparsec
 import Control.Monad.Indexed qualified as Indexed
 import Data.Char qualified as Char
 import Text.Megaparsec qualified as Megaparsec
+import Text.Read qualified as Read
+import Prelude hiding (read)
+import Prelude qualified
 
 -- | Type constrainted version of 'single'
 char :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => Char -> m r r Char
@@ -49,5 +57,26 @@ digitChar = Indexed.do
 -- | A (maximal) sequence of decimal digits interpreted as a natural number
 nat :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
 nat = Indexed.do
-  Indexed.shift_ $ \k fl -> Indexed.pure (\i -> k (fl . read) (show i))
-  read <$> Indexed.some digitChar
+  read Indexed.<*> Indexed.some digitChar
+
+-- | A total lead based using 'Prelude.read' and 'show' for the respective directions.
+-- It is the responsibility of the parser to ensure that the input is the domain
+-- of 'Prelude.read' (the printer, on the other hand always succeeds). Otherwise
+-- the 'read' descriptor will fail with 'error'.
+--
+-- For a format descriptor capable of failing with a parse error, see 'readM'.
+read :: (Indexed.Monad m, Indexed.Stacked m, Read a, Show a) => m (a -> r) (String -> r) (String -> a)
+read = Indexed.do
+  Indexed.stack (\_fl k a -> k (show a)) (\k s -> k (Prelude.read s))
+  Indexed.pure Prelude.read
+
+-- | A format descriptor using 'Prelude.read' and 'show' for the respective
+-- directions. If 'read' fails, then a parse error is reported (with the same
+-- message as 'readEither'). In exchange 'readM', compared to 'read', must use a
+-- monadic control flow.
+readM :: (Indexed.MonadFail m, Indexed.Stacked m, Read a, Show a) => String -> m (a -> r) (String -> r) a
+readM s = Indexed.do
+  Indexed.stack (\_fl k a -> k (show a)) (\k s' -> k (Prelude.read s'))
+  case Read.readEither s of
+    Right a -> Indexed.pure a
+    Left err -> Indexed.fail err
