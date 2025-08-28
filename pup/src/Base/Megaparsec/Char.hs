@@ -6,6 +6,7 @@
 module Base.Megaparsec.Char
   ( -- * Numbers
     digit,
+    digitChar,
     nat,
 
     -- * Individual characters
@@ -27,20 +28,23 @@ char = single
 anyChar :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Char -> r) r Char
 anyChar = anySingle
 
--- | Decimal digit
+-- | Decimal digit. To manipulate the raw 'Char' instead, use 'digitChar'.
 digit :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
 digit = Indexed.do
+  -- TODO: the printer should error out if the integer on the stack isn't a
+  -- single digit.
   Indexed.stack (\_fl k i -> k (head (show i))) (\k _ -> k 0)
-  c <- satisfy Char.isDigit <?> "decimal digit"
-  Indexed.pure $ read [c]
+  c <- digitChar
+  Indexed.pure $ Char.digitToInt c
+
+-- | A 'Char' standing for a decimal digit. You can return the digit at an 'Int'
+-- with 'digit'.
+digitChar :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Char -> r) r Char
+digitChar = Indexed.do
+  satisfy Char.isDigit <?> "decimal digit"
 
 -- | A (maximal) sequence of decimal digits interpreted as a natural number
 nat :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
 nat = Indexed.do
-  Indexed.shift_ $ \k fl -> Indexed.pure (\i -> k (fl . undigitise) (digitise i))
-  undigitise <$> Indexed.some (try digit)
-  where
-    digitise n
-      | n < 10 = [n]
-      | otherwise = let (q, r) = quotRem n 10 in (digitise q) ++ [r]
-    undigitise = foldl (\n d -> 10 * n + d) 0
+  Indexed.shift_ $ \k fl -> Indexed.pure (\i -> k (fl . read) (show i))
+  read <$> Indexed.some digitChar
