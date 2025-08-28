@@ -47,11 +47,15 @@ modify f (PPrint (Cont2.Cont2W a)) = PPrint $ Cont2.Cont2W $ \(Comonad.TracedT (
 instance MonadParsec e Text (PPrint e ann) where
   parseError _ = Additive.empty
   label _ = id
-  try = id -- TODO: probably incorrect
-  lookAhead = id -- TODO: probably incorrect
-  notFollowedBy = void -- TODO: probably incorrect
-  withRecovery _ = id -- TODO: probably incorrect
-  observing = (Indexed.>>= return . Right) -- TODO: dubious
+  try = id
+  lookAhead _ = Cont2.pop
+  notFollowedBy _ = Indexed.pure ()
+  withRecovery _ = id
+  observing pr = Indexed.do
+    v <- Cont2.pop
+    case v of
+      Right b -> Right <$> pr Indexed.@ b
+      Left err -> Indexed.pure $ Left err
   eof = Indexed.pure ()
   token _match _expected pr = Indexed.do
     tok <- Cont2.pop

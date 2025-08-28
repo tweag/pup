@@ -94,10 +94,9 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Indexed.Stacked m) => MonadPars
 
   -- | If @p@ in @'lookAhead' p@ succeeds (either consuming input or not)
   -- the whole parser behaves like @p@ succeeded without consuming anything
-  -- (parser state is not updated as well). If @p@ fails, 'lookAhead' has no
-  -- effect, i.e. it will fail consuming input if @p@ fails consuming input.
-  -- Combine with 'try' if this is undesirable.
-  lookAhead :: m r r' a -> m r r' a
+  -- (parser state is not updated as well). If @p@ fails, contrary to
+  -- Megaparsec, @'lookAhead' p@ fails without consuming input.
+  lookAhead :: m (a -> r) r a -> m (a -> r) r a
 
   -- | @'notFollowedBy' p@ only succeeds when the parser @p@ fails. This
   -- parser /never consumes/ any input and /never modifies/ parser state. It
@@ -125,16 +124,12 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Indexed.Stacked m) => MonadPars
 
   -- | @'observing' p@ allows us to “observe” failure of the @p@ parser,
   -- should it happen, without actually ending parsing but instead getting
-  -- the 'ParseError' in 'Left'. On success parsed value is returned in
-  -- 'Right' as usual. Note that this primitive just allows you to observe
-  -- parse errors as they happen, it does not backtrack or change how the
-  -- @p@ parser works in any way.
-  --
-  -- @since 5.1.0
+  -- the 'ParseError' in 'Left', and no input is consumed. On success parsed value is returned in
+  -- 'Right' as usual.
   observing ::
     -- | The parser to run
-    m r r' a ->
-    m r r' (Either (Megaparsec.ParseError s e) a)
+    m (b -> r) r a ->
+    m ((Either (Megaparsec.ParseError s e) b) -> r) r (Either (Megaparsec.ParseError s e) a)
 
   -- | This parser only succeeds at the end of input.
   eof :: m r r ()
@@ -452,10 +447,10 @@ instance (Megaparsec.MonadParsec e s m) => MonadParsec e s (Indexed.IgnoreStack 
   label s (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.label s a
   try (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.try a
   hidden (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.hidden a
-  lookAhead (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.lookAhead a
+  lookAhead (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.lookAhead (Megaparsec.try a)
   notFollowedBy (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.notFollowedBy a
   withRecovery f (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.withRecovery (Indexed.unIgnoreStack . f) a
-  observing (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.observing a
+  observing (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.observing (Megaparsec.try a)
   eof = Indexed.IgnoreStack Megaparsec.eof
   token f s _p = Indexed.IgnoreStack $ Megaparsec.token f s
   tokens f s = Indexed.IgnoreStack $ Megaparsec.tokens f s
