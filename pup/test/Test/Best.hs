@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -20,6 +21,7 @@ import Control.Monad hiding (guard)
 import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed qualified as Indexed
 import Control.Monad.Indexed.Lead.Generic (lead)
+import Control.Monad.Indexed.Lead.Labels ()
 import Data.Maybe qualified as Maybe
 import Data.String qualified as String
 import Data.Text (Text)
@@ -42,16 +44,8 @@ import Prelude qualified
 
 bool :: (MonadParsec e s m, String.IsString (Megaparsec.Tokens s)) => m (Bool -> r) r Bool
 bool =
-  trueLead <* chunk "True"
-    <|> falseLead <* chunk "False"
-  where
-    trueLead = Indexed.do
-      Indexed.stack (\cases _ k True -> k; fl _ b -> fl b) (\k -> k True)
-      Indexed.pure True
-
-    falseLead = Indexed.do
-      Indexed.stack (\cases _ k False -> k; fl _ b -> fl b) (\k -> k False)
-      Indexed.pure False
+  #True <* chunk "True"
+    <|> #False <* chunk "False"
 
 -------------------------------------------------------------------------------
 --
@@ -93,8 +87,8 @@ genT = Gen.choice [genC, genD]
 
 uupT :: PUP (T -> r) r T
 uupT =
-  lead @"C" <* chunk "C" <* space1 <*> nat <* space1 <*> bool
-    <|> lead @"D" <* chunk "D" <* space1 <*> anySingle <* space1 <*> bool <* space1 <*> nat
+  #C <* chunk "C" <* space1 <*> nat <* space1 <*> bool
+    <|> #D <* chunk "D" <* space1 <*> anySingle <* space1 <*> bool <* space1 <*> nat
 
 data U = K T Int | L
   deriving (Show, Generic, Eq)
@@ -107,8 +101,8 @@ genU = Gen.frequency [(20, genK), (1, genL)]
 
 uupU :: PUP (U -> r) r U
 uupU =
-  lead @"K" <* chunk "K" <* space1 <*> uupT <* space1 <*> nat
-    <|> lead @"L" <* chunk "L"
+  #K <* chunk "K" <* space1 <*> uupT <* space1 <*> nat
+    <|> #L <* chunk "L"
 
 prop_round_trip_Bool :: Property
 prop_round_trip_Bool = property $ do
@@ -151,10 +145,10 @@ data SExpr
 -- A simple s-expr parser, doesn't handle escaped characters in strings
 sexpr :: PUP (SExpr -> r) r SExpr
 sexpr =
-  group (nest 2 (lead @"SList" <* try (chunk "(") <* space <*> try sexpr `Indexed.sepBy` space1 <* space <* chunk ")"))
-    <|> lead @"SSymb" <*> try symbol
-    <|> lead @"SInt" <*> try nat
-    <|> lead @"SStr" <* try (chunk "\"") <*> takeWhileP Nothing (/= '"') <* chunk "\""
+  group (nest 2 (#SList <* try (chunk "(") <* space <*> try sexpr `Indexed.sepBy` space1 <* space <* chunk ")"))
+    <|> #SSymb <*> try symbol
+    <|> #SInt <*> try nat
+    <|> #SStr <* try (chunk "\"") <*> takeWhileP Nothing (/= '"') <* chunk "\""
   where
     symbol :: forall r'. PUP (String -> r') r' String
     symbol = lead @":" <*> symbol_lead <*> Indexed.many (try symbol_other)
