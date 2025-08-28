@@ -31,11 +31,14 @@ anyChar = anySingle
 -- | Decimal digit. To manipulate the raw 'Char' instead, use 'digitChar'.
 digit :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
 digit = Indexed.do
-  -- TODO: the printer should error out if the integer on the stack isn't a
-  -- single digit.
-  Indexed.stack (\_fl k i -> k (head (show i))) (\k _ -> k 0)
+  Indexed.stack decimal (\k _ -> k 0)
   c <- digitChar
   Indexed.pure $ Char.digitToInt c
+  where
+    decimal :: (Int -> r) -> (Char -> r) -> Int -> r
+    decimal fl k i
+      | 0 <= i && i < 10 = k (Char.intToDigit i)
+      | otherwise = fl i
 
 -- | A 'Char' standing for a decimal digit. You can return the digit at an 'Int'
 -- with 'digit'.

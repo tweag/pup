@@ -115,6 +115,11 @@ prop_round_trip_Bool = property $ do
   x <- forAll $ Gen.bool
   roundTrip bool x
 
+prop_round_trip_Digit :: Property
+prop_round_trip_Digit = property $ do
+  x <- forAll $ Gen.int (Range.linear 0 9)
+  roundTrip digit x
+
 prop_round_trip_Nat :: Property
 prop_round_trip_Nat = property $ do
   x <- forAll $ Gen.int (Range.linear 0 100)
