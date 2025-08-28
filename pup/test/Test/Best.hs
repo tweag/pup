@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE TemplateHaskell #-}
@@ -11,15 +12,16 @@ module Test.Best
   )
 where
 
-import Base.Megaparsec qualified as Parse
+import Base.Megaparsec
+import Base.Megaparsec.Char
 import BestPUP
 import Control.Additive ((<|>))
 import Control.Monad hiding (guard)
 import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed qualified as Indexed
 import Control.Monad.Indexed.Lead.Generic (lead)
-import Data.List qualified as List
 import Data.Maybe qualified as Maybe
+import Data.String qualified as String
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.Generics
@@ -28,8 +30,28 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Prettyprinter qualified
 import Prettyprinter.Render.Text qualified as Prettyprinter
+import Text.Megaparsec qualified as Megaparsec
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
+
+-------------------------------------------------------------------------------
+--
+-- Additional parsers
+--
+-------------------------------------------------------------------------------
+
+bool :: (MonadParsec e s m, String.IsString (Megaparsec.Tokens s)) => m (Bool -> r) r Bool
+bool =
+  trueLead <* chunk "True"
+    <|> falseLead <* chunk "False"
+  where
+    trueLead = Indexed.do
+      Indexed.stack (\cases _ k True -> k; fl _ b -> fl b) (\k -> k True)
+      Indexed.pure True
+
+    falseLead = Indexed.do
+      Indexed.stack (\cases _ k False -> k; fl _ b -> fl b) (\k -> k False)
+      Indexed.pure False
 
 -------------------------------------------------------------------------------
 --
@@ -71,8 +93,8 @@ genT = Gen.choice [genC, genD]
 
 uupT :: PUP (T -> r) r T
 uupT =
-  lead @"C" <* string "C" <* space1 <*> int <* space1 <*> bool
-    <|> lead @"D" <* string "D" <* space1 <*> anyChar <* space1 <*> bool <* space1 <*> int
+  lead @"C" <* chunk "C" <* space1 <*> nat <* space1 <*> bool
+    <|> lead @"D" <* chunk "D" <* space1 <*> anySingle <* space1 <*> bool <* space1 <*> nat
 
 data U = K T Int | L
   deriving (Show, Generic, Eq)
@@ -85,18 +107,18 @@ genU = Gen.frequency [(20, genK), (1, genL)]
 
 uupU :: PUP (U -> r) r U
 uupU =
-  lead @"K" <* string "K" <* space1 <*> uupT <* space1 <*> int
-    <|> lead @"L" <* string "L"
+  lead @"K" <* chunk "K" <* space1 <*> uupT <* space1 <*> nat
+    <|> lead @"L" <* chunk "L"
 
 prop_round_trip_Bool :: Property
 prop_round_trip_Bool = property $ do
   x <- forAll $ Gen.bool
   roundTrip bool x
 
-prop_round_trip_Int :: Property
-prop_round_trip_Int = property $ do
+prop_round_trip_Nat :: Property
+prop_round_trip_Nat = property $ do
   x <- forAll $ Gen.int (Range.linear 0 100)
-  roundTrip int x
+  roundTrip nat x
 
 prop_round_trip_T :: Property
 prop_round_trip_T = property $ do
@@ -124,18 +146,18 @@ data SExpr
 -- A simple s-expr parser, doesn't handle escaped characters in strings
 sexpr :: PUP (SExpr -> r) r SExpr
 sexpr =
-  group (nest 2 (lead @"SList" <* Parse.try (string "(") <* space <*> Parse.try sexpr `Indexed.sepBy` space1 <* space <* string ")"))
-    <|> lead @"SSymb" <*> Parse.try symbol
-    <|> lead @"SInt" <*> Parse.try int
-    <|> lead @"SStr" <* Parse.try (string "\"") <*> Parse.takeWhileP Nothing (/= '"') <* string "\""
+  group (nest 2 (lead @"SList" <* try (chunk "(") <* space <*> try sexpr `Indexed.sepBy` space1 <* space <* chunk ")"))
+    <|> lead @"SSymb" <*> try symbol
+    <|> lead @"SInt" <*> try nat
+    <|> lead @"SStr" <* try (chunk "\"") <*> takeWhileP Nothing (/= '"') <* chunk "\""
   where
     symbol :: forall r'. PUP (String -> r') r' String
-    symbol = lead @":" <*> symbol_lead <*> Indexed.many (Parse.try symbol_other)
+    symbol = lead @":" <*> symbol_lead <*> Indexed.many (try symbol_other)
 
     symbol_lead :: forall r'. PUP (Char -> r') r' Char
-    symbol_lead = Parse.satisfy (`List.elem` (':' : ['a' .. 'z'] ++ ['A' .. 'Z']))
+    symbol_lead = oneOf (':' : ['a' .. 'z'] ++ ['A' .. 'Z'])
     symbol_other :: forall r'. PUP (Char -> r') r' Char
-    symbol_other = Parse.satisfy (`List.elem` (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ ['-']))
+    symbol_other = oneOf (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ ['-'])
 
 reprintSexpr :: Text -> IO ()
 reprintSexpr str = do

@@ -2,7 +2,23 @@
 {-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Base.Megaparsec where
+module Base.Megaparsec
+  ( -- * The parser type class
+    MonadParsec (..),
+
+    -- * Derived parser combinators
+    single,
+    chunk,
+    satisfy,
+    oneOf,
+    noneOf,
+    anySingle,
+    anySingleBut,
+    (<?>),
+    takeRest,
+    atEnd,
+  )
+where
 
 import Control.Additive
 import Control.Monad.Indexed qualified as Indexed
@@ -374,8 +390,8 @@ chunk ::
   (MonadParsec e s m) =>
   -- | Chunk to match
   Megaparsec.Tokens s ->
-  m (Megaparsec.Tokens s -> r) r (Megaparsec.Tokens s)
-chunk = tokens (==)
+  m r r (Megaparsec.Tokens s)
+chunk s = tokens (==) s Indexed.@ s
 {-# INLINE chunk #-}
 
 -- | A synonym for 'label' in the form of an operator.

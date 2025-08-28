@@ -16,6 +16,7 @@ build-type:     Simple
 library
   exposed-modules:
       Base.Megaparsec
+      Base.Megaparsec.Char
       Base.Parse
       Base.Prettyprinter
       Base.Print
