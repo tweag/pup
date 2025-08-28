@@ -37,9 +37,8 @@ fail :: String -> PUP r r a
 fail msg = Additive.empty Indexed.:*: (Indexed.IgnoreStack $ Prelude.fail msg)
 
 -- | Version of `guard` with an error message.
-guard :: Bool -> String -> PUP r r ()
-guard True _ = Indexed.pure ()
-guard False msg = fail msg
+guard :: Indexed.MonadFail m => Bool -> String -> m r r ()
+guard = Indexed.guardF
 
 anyChar :: PUP (Char -> r) r Char
 anyChar = anySingle
