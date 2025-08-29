@@ -443,21 +443,21 @@ atEnd = (True <$ hidden eof) <|> pure False
 --
 ---------------------------------------------------------------------------
 
-instance (Megaparsec.MonadParsec e s m) => MonadParsec e s (Indexed.IgnoreStack m) where
-  parseError = Indexed.IgnoreStack . Megaparsec.parseError
-  label s (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.label s a
-  try (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.try a
-  hidden (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.hidden a
-  lookAhead (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.lookAhead (Megaparsec.try a)
-  notFollowedBy (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.notFollowedBy a
-  withRecovery f (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.withRecovery (Indexed.unIgnoreStack . f) a
-  observing (Indexed.IgnoreStack a) = Indexed.IgnoreStack $ Megaparsec.observing (Megaparsec.try a)
-  eof = Indexed.IgnoreStack Megaparsec.eof
-  token f s _p = Indexed.IgnoreStack $ Megaparsec.token f s
-  tokens f s = Indexed.IgnoreStack $ Megaparsec.tokens f s
-  takeWhileP s f = Indexed.IgnoreStack $ Megaparsec.takeWhileP s f
-  takeWhile1P s f = Indexed.IgnoreStack $ Megaparsec.takeWhile1P s f
-  takeP s n = Indexed.IgnoreStack $ Megaparsec.takeP s n
+instance (Megaparsec.MonadParsec e s m) => MonadParsec e s (Indexed.IgnoreIndices m) where
+  parseError = Indexed.IgnoreIndices . Megaparsec.parseError
+  label s (Indexed.IgnoreIndices a) = Indexed.IgnoreIndices $ Megaparsec.label s a
+  try (Indexed.IgnoreIndices a) = Indexed.IgnoreIndices $ Megaparsec.try a
+  hidden (Indexed.IgnoreIndices a) = Indexed.IgnoreIndices $ Megaparsec.hidden a
+  lookAhead (Indexed.IgnoreIndices a) = Indexed.IgnoreIndices $ Megaparsec.lookAhead (Megaparsec.try a)
+  notFollowedBy (Indexed.IgnoreIndices a) = Indexed.IgnoreIndices $ Megaparsec.notFollowedBy a
+  withRecovery f (Indexed.IgnoreIndices a) = Indexed.IgnoreIndices $ Megaparsec.withRecovery (Indexed.unIgnoreIndices . f) a
+  observing (Indexed.IgnoreIndices a) = Indexed.IgnoreIndices $ Megaparsec.observing (Megaparsec.try a)
+  eof = Indexed.IgnoreIndices Megaparsec.eof
+  token f s _p = Indexed.IgnoreIndices $ Megaparsec.token f s
+  tokens f s = Indexed.IgnoreIndices $ Megaparsec.tokens f s
+  takeWhileP s f = Indexed.IgnoreIndices $ Megaparsec.takeWhileP s f
+  takeWhile1P s f = Indexed.IgnoreIndices $ Megaparsec.takeWhile1P s f
+  takeP s n = Indexed.IgnoreIndices $ Megaparsec.takeP s n
 
 instance (MonadParsec e s m1, MonadParsec e s m2) => MonadParsec e s (m1 Indexed.:*: m2) where
   parseError e = parseError e Indexed.:*: parseError e

@@ -16,19 +16,19 @@ import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Data.Char qualified as Char
 import Prelude hiding (Applicative (..), Monad (..))
 
-type PUP = Print Indexed.:*: Indexed.IgnoreStack Parse
+type PUP = Print Indexed.:*: Indexed.IgnoreIndices Parse
 
 parse :: PUP r r' a -> String -> Maybe (a, String)
-parse (_ Indexed.:*: Indexed.IgnoreStack prse) = Parse.runParse prse
+parse (_ Indexed.:*: Indexed.IgnoreIndices prse) = Parse.runParse prse
 
 print :: PUP (a -> Maybe String) (Maybe String) b -> a -> Maybe String
 print (prnt Indexed.:*: _) = Print.print prnt
 
 once :: (r -> r') -> PUP r r' a -> PUP r r' a
-once unr (prnt Indexed.:*: Indexed.IgnoreStack prse) = (Print.once unr prnt) Indexed.:*: Indexed.IgnoreStack prse
+once unr (prnt Indexed.:*: Indexed.IgnoreIndices prse) = (Print.once unr prnt) Indexed.:*: Indexed.IgnoreIndices prse
 
 anyChar :: PUP (Char -> r) r Char
-anyChar = Print.anyChar Indexed.:*: Indexed.IgnoreStack Parse.anyChar
+anyChar = Print.anyChar Indexed.:*: Indexed.IgnoreIndices Parse.anyChar
 
 char :: Char -> PUP r r ()
 char c = Indexed.do
