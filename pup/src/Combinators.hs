@@ -12,6 +12,7 @@ import Control.Additive ((<|>))
 import Control.Monad
 import Control.Monad.Indexed ((<*))
 import Control.Monad.Indexed qualified as Indexed
+import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Data.Char qualified as Char
 import Prelude hiding (Applicative (..), Monad (..))
 
@@ -31,7 +32,7 @@ anyChar = Print.anyChar Indexed.:*: Indexed.IgnoreStack Parse.anyChar
 
 char :: Char -> PUP r r ()
 char c = Indexed.do
-  c' <- anyChar Indexed.@ c
+  c' <- anyChar Cont2.@ c
   guard $ c == c'
 
 space :: PUP r r ()
@@ -42,15 +43,15 @@ string = mapM_ char
 
 digit :: PUP (Int -> r) r Int
 digit = Indexed.do
-  Indexed.stack (\_fl k i -> k (head (show i))) (\k _ -> k 0)
+  Cont2.stack (\_fl k i -> k (head (show i))) (\k _ -> k 0)
   c <- anyChar
   guard $ Char.isDigit c
   Indexed.pure $ read [c]
 
 int :: PUP (Int -> r) r Int
 int = Indexed.do
-  Indexed.stack digitise (\k -> k . head)
-  undigitise <$> Indexed.some digit
+  Cont2.stack digitise (\k -> k . head)
+  undigitise <$> Cont2.some digit
   where
     digitise _fl k n = k (digitise' n)
     digitise' n
@@ -64,9 +65,9 @@ bool =
     <|> falseLead <* string "False"
   where
     trueLead = Indexed.do
-      Indexed.stack (\cases _ k True -> k; fl _ b -> fl b) (\k -> k True)
+      Cont2.stack (\cases _ k True -> k; fl _ b -> fl b) (\k -> k True)
       Indexed.pure True
 
     falseLead = Indexed.do
-      Indexed.stack (\cases _ k False -> k; fl _ b -> fl b) (\k -> k False)
+      Cont2.stack (\cases _ k False -> k; fl _ b -> fl b) (\k -> k False)
       Indexed.pure False

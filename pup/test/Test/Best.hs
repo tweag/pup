@@ -19,7 +19,7 @@ import BestPUP
 import Control.Additive ((<|>))
 import Control.Monad hiding (guard)
 import Control.Monad.Indexed ((<*), (<*>))
-import Control.Monad.Indexed qualified as Indexed
+import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Control.Monad.Indexed.Lead.Generic (lead)
 import Control.Monad.Indexed.Lead.Labels ()
 import Data.Maybe qualified as Maybe
@@ -145,13 +145,13 @@ data SExpr
 -- A simple s-expr parser, doesn't handle escaped characters in strings
 sexpr :: PUP (SExpr -> r) r SExpr
 sexpr =
-  group (nest 2 (#SList <* try (chunk "(") <* space <*> try sexpr `Indexed.sepBy` space1 <* space <* chunk ")"))
+  group (nest 2 (#SList <* try (chunk "(") <* space <*> try sexpr `Cont2.sepBy` space1 <* space <* chunk ")"))
     <|> #SSymb <*> try symbol
     <|> #SInt <*> try nat
     <|> #SStr <* try (chunk "\"") <*> takeWhileP Nothing (/= '"') <* chunk "\""
   where
     symbol :: forall r'. PUP (String -> r') r' String
-    symbol = lead @":" <*> symbol_lead <*> Indexed.many (try symbol_other)
+    symbol = lead @":" <*> symbol_lead <*> Cont2.many (try symbol_other)
 
     symbol_lead :: forall r'. PUP (Char -> r') r' Char
     symbol_lead = oneOf (':' : ['a' .. 'z'] ++ ['A' .. 'Z'])

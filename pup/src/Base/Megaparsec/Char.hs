@@ -22,6 +22,7 @@ where
 
 import Base.Megaparsec
 import Control.Monad.Indexed qualified as Indexed
+import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Data.Char qualified as Char
 import Text.Megaparsec qualified as Megaparsec
 import Text.Read qualified as Read
@@ -39,7 +40,7 @@ anyChar = anySingle
 -- | Decimal digit. To manipulate the raw 'Char' instead, use 'digitChar'.
 digit :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
 digit = Indexed.do
-  Indexed.stack decimal (\k _ -> k 0)
+  Cont2.stack decimal (\k _ -> k 0)
   c <- digitChar
   Indexed.pure $ Char.digitToInt c
   where
@@ -57,7 +58,7 @@ digitChar = Indexed.do
 -- | A (maximal) sequence of decimal digits interpreted as a natural number
 nat :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
 nat = Indexed.do
-  read Indexed.<*> Indexed.some digitChar
+  read Indexed.<*> Cont2.some digitChar
 
 -- | A total lead based using 'Prelude.read' and 'show' for the respective directions.
 -- It is the responsibility of the parser to ensure that the input is the domain
@@ -65,18 +66,18 @@ nat = Indexed.do
 -- the 'read' descriptor will fail with 'error'.
 --
 -- For a format descriptor capable of failing with a parse error, see 'readM'.
-read :: (Indexed.Monad m, Indexed.Stacked m, Read a, Show a) => m (a -> r) (String -> r) (String -> a)
+read :: (Indexed.Monad m, Cont2.Stacked m, Read a, Show a) => m (a -> r) (String -> r) (String -> a)
 read = Indexed.do
-  Indexed.stack (\_fl k a -> k (show a)) (\k s -> k (Prelude.read s))
+  Cont2.stack (\_fl k a -> k (show a)) (\k s -> k (Prelude.read s))
   Indexed.pure Prelude.read
 
 -- | A format descriptor using 'Prelude.read' and 'show' for the respective
 -- directions. If 'read' fails, then a parse error is reported (with the same
 -- message as 'readEither'). In exchange 'readM', compared to 'read', must use a
 -- monadic control flow.
-readM :: (Indexed.MonadFail m, Indexed.Stacked m, Read a, Show a) => String -> m (a -> r) (String -> r) a
+readM :: (Indexed.MonadFail m, Cont2.Stacked m, Read a, Show a) => String -> m (a -> r) (String -> r) a
 readM s = Indexed.do
-  Indexed.stack (\_fl k a -> k (show a)) (\k s' -> k (Prelude.read s'))
+  Cont2.stack (\_fl k a -> k (show a)) (\k s' -> k (Prelude.read s'))
   case Read.readEither s of
     Right a -> Indexed.pure a
     Left err -> Indexed.fail err

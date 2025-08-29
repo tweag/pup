@@ -22,6 +22,7 @@ where
 
 import Control.Additive
 import Control.Monad.Indexed qualified as Indexed
+import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Data.List.NonEmpty qualified as NonEmpty
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -32,7 +33,7 @@ import Text.Megaparsec qualified as Megaparsec
 -- Note: doesn't have the reflection/escape hatch primitives because they aren't
 -- implementable for printers. If you need them, you want to act at the parsec
 -- level, not the Pup level.
-class (Megaparsec.Stream s, Indexed.MonadPlus m, Indexed.Stacked m) => MonadParsec e s m | m -> e s where
+class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec e s m | m -> e s where
   -- | Stop parsing and report the 'ParseError'. This is the only way to
   -- control position of the error without manipulating the parser state
   -- manually.
@@ -268,7 +269,7 @@ single ::
   -- | Token to match
   Megaparsec.Token s ->
   m r r (Megaparsec.Token s)
-single t = token testToken expected id Indexed.@ t
+single t = token testToken expected id Cont2.@ t
   where
     testToken x = if x == t then Just x else Nothing
     expected = Set.singleton (Megaparsec.Tokens (t NonEmpty.:| []))
@@ -386,7 +387,7 @@ chunk ::
   -- | Chunk to match
   Megaparsec.Tokens s ->
   m r r (Megaparsec.Tokens s)
-chunk s = tokens (==) s Indexed.@ s
+chunk s = tokens (==) s Cont2.@ s
 {-# INLINE chunk #-}
 
 -- | A synonym for 'label' in the form of an operator.

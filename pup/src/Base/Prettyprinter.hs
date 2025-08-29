@@ -21,7 +21,7 @@ import Prelude qualified
 
 -- | `e` is a phantom type for the parse error type.
 newtype PPrint e ann r r' a = PPrint (Cont2W (Comonad.Traced (Prettyprinter.Doc ann)) r r' a)
-  deriving newtype (Functor, Indexed.Applicative, Indexed.Monad, Indexed.Stacked, Cont2.Shifty, Additive)
+  deriving newtype (Functor, Indexed.Applicative, Indexed.Monad, Cont2.Stacked, Cont2.Shifty, Additive)
 
 deriving newtype instance Prelude.Applicative (PPrint e ann r r)
 
@@ -54,7 +54,7 @@ instance MonadParsec e Text (PPrint e ann) where
   observing pr = Indexed.do
     v <- Cont2.pop
     case v of
-      Right b -> Right <$> pr Indexed.@ b
+      Right b -> Right <$> pr Cont2.@ b
       Left err -> Indexed.pure $ Left err
   eof = Indexed.pure ()
   token _match _expected pr = Indexed.do

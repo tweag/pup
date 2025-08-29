@@ -15,6 +15,7 @@ import Control.Additive ((<|>))
 import Control.Monad
 import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed qualified as Indexed
+import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Control.Monad.Indexed.Lead.Generic (lead)
 import Data.List qualified as List
 import Data.Maybe qualified as Maybe
@@ -94,7 +95,7 @@ prop_round_trip_U = property $ do
 -- An example of backtracking behaviour
 bktrk :: PUP (() -> r) r ()
 bktrk = Indexed.do
-  Indexed.pop_
+  Cont2.pop_
   b <- Indexed.pure True <|> Indexed.pure False
   guard $ not b
   case b of
@@ -119,7 +120,7 @@ prop_print_bktrk =
 -- Avoiding backtracking
 bktrk_once :: Bool -> PUP (() -> r) r ()
 bktrk_once b0 = Indexed.do
-  Indexed.pop_
+  Cont2.pop_
   b <- Combinators.once id (Indexed.pure True <|> Indexed.pure False)
   guard $ b == b0
   case b of
@@ -151,10 +152,10 @@ whitespace = Indexed.do
   Indexed.pure c
 
 ws :: PUP r r ()
-ws = void $ Indexed.many whitespace Indexed.@ " "
+ws = void $ Cont2.many whitespace Cont2.@ " "
 
 puntil :: (a -> Bool) -> (forall r'. PUP (a -> r') r' a) -> PUP ([a] -> r) r [a]
-puntil p pup = Indexed.many $ Indexed.do
+puntil p pup = Cont2.many $ Indexed.do
   a <- pup
   guard $ not (p a)
   Indexed.pure a
@@ -162,13 +163,13 @@ puntil p pup = Indexed.many $ Indexed.do
 -- A simple s-expr parser, doesn't handle escaped characters in strings
 sexpr :: PUP (SExpr -> r) r SExpr
 sexpr =
-  lead @"SList" <* string "(" <* ws <*> Indexed.many (sexpr <* ws) <* string ")" <* ws
+  lead @"SList" <* string "(" <* ws <*> Cont2.many (sexpr <* ws) <* string ")" <* ws
     <|> lead @"SSymb" <*> symbol
     <|> lead @"SInt" <*> int
     <|> lead @"SStr" <* string "\"" <*> puntil (== '"') anyChar <* string "\""
   where
     symbol :: forall r'. PUP (String -> r') r' String
-    symbol = lead @":" <*> symbol_lead <*> Indexed.many symbol_other
+    symbol = lead @":" <*> symbol_lead <*> Cont2.many symbol_other
 
     symbol_lead :: forall r'. PUP (Char -> r') r' Char
     symbol_lead = Indexed.do
