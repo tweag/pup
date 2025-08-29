@@ -40,14 +40,10 @@ anyChar = anySingle
 -- | Decimal digit. To manipulate the raw 'Char' instead, use 'digitChar'.
 digit :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
 digit = Indexed.do
-  Cont2.stack decimal (\k _ -> k 0)
+  Cont2.shift_ $ \k fl -> Indexed.pure $ \i -> if 0 <= i && i < 10 then k fl i else fl i
+  Cont2.shift_ $ \k fl -> Indexed.pure $ \i -> k (\_ -> fl i) (Char.intToDigit i)
   c <- digitChar
   Indexed.pure $ Char.digitToInt c
-  where
-    decimal :: (Int -> r) -> (Char -> r) -> Int -> r
-    decimal fl k i
-      | 0 <= i && i < 10 = k (Char.intToDigit i)
-      | otherwise = fl i
 
 -- | A 'Char' standing for a decimal digit. You can return the digit at an 'Int'
 -- with 'digit'.
