@@ -1,6 +1,5 @@
 {-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE QualifiedDo #-}
-{-# OPTIONS_GHC -Wno-x-partial #-}
 
 -- | Format descriptors specialised to the token type 'Char'. See also
 -- "Text.Megaparsec.Char".
