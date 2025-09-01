@@ -17,7 +17,7 @@ print prnt = Cont2.runCont2W prnt (Comonad.traced (\s _ _ -> Just s)) (\_ -> Not
 anyChar :: Print (Char -> r) r Char
 anyChar = Indexed.do
   c <- Cont2.pop
-  Cont2.run' $ Comonad.trace [c]
+  Cont2.yield_ $ Comonad.trace [c]
   Indexed.pure c
 
 once :: (r -> r') -> Print r r' a -> Print r r' a

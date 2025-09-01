@@ -38,7 +38,7 @@ run :: forall a b e ann. PPrint e ann (a -> Maybe (Prettyprinter.Doc ann)) (Mayb
 run (PPrint prnt) = Cont2.runCont2W prnt (Comonad.traced (\s _ _ -> Just s)) (\_ -> Nothing)
 
 tell :: Prettyprinter.Doc ann -> PPrint e ann r r ()
-tell doc = PPrint $ Cont2.run' $ Comonad.trace doc
+tell doc = PPrint $ Cont2.yield_ $ Comonad.trace doc
 
 modify :: (Prettyprinter.Doc ann -> Prettyprinter.Doc ann) -> PPrint e ann r r' a -> PPrint e ann r r' a
 modify f (PPrint (Cont2.Cont2W a)) = PPrint $ Cont2.Cont2W $ \(Comonad.TracedT (Identity wk)) fl -> a (Comonad.TracedT (Identity (wk . f))) fl
