@@ -31,7 +31,7 @@ deriving newtype instance Prelude.Monad (PPrint e ann r r)
 
 deriving newtype instance MonadPlus (PPrint e ann r r)
 
-instance Indexed.MonadFail (PPrint e ann) where
+instance Indexed.Fail (PPrint e ann) where
   fail _msg = Additive.empty
 
 run :: forall a b e ann. PPrint e ann (a -> Maybe (Prettyprinter.Doc ann)) (Maybe (Prettyprinter.Doc ann)) b -> a -> Maybe (Prettyprinter.Doc ann)
