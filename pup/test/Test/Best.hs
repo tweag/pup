@@ -20,8 +20,8 @@ import Control.Additive ((<|>))
 import Control.Monad hiding (guard)
 import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed.Cont2 qualified as Cont2
-import Control.Monad.Indexed.Lead.Generic (lead)
-import Control.Monad.Indexed.Lead.Labels ()
+import Control.Monad.Indexed.Cont2.Lead.Generic (lead)
+import Control.Monad.Indexed.Cont2.Lead.Labels ()
 import Data.Maybe qualified as Maybe
 import Data.String qualified as String
 import Data.Text (Text)

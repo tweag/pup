@@ -16,7 +16,7 @@ import Control.Monad
 import Control.Monad.Indexed ((<*), (<*>))
 import Control.Monad.Indexed qualified as Indexed
 import Control.Monad.Indexed.Cont2 qualified as Cont2
-import Control.Monad.Indexed.Lead.Generic (lead)
+import Control.Monad.Indexed.Cont2.Lead.Generic (lead)
 import Data.List qualified as List
 import Data.Maybe qualified as Maybe
 import GHC.Generics
