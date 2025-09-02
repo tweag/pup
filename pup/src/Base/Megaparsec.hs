@@ -2,7 +2,7 @@
 {-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
--- | This module defines a Megaparsec backend for format descriptors. To that
+-- | This module defines a "Text.Megaparsec" backend for format descriptors. To that
 -- effect, this module introduces a type class 'MonadParsec' modeled after
 -- Megarparsec's own type class, so that format descriptors can take advantage
 -- of Megaparsec features.

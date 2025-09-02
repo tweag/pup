@@ -15,6 +15,7 @@ where
 
 import Base.Megaparsec
 import Base.Megaparsec.Char
+import Base.Prettyprinter
 import BestPUP
 import Control.Additive ((<|>))
 import Control.Monad hiding (guard)

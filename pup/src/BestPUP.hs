@@ -22,12 +22,6 @@ parse (_ Indexed.:*: Indexed.IgnoreIndices prse) name input =
     (Left err) -> Left $ Megaparsec.errorBundlePretty err
     (Right a) -> Right a
 
-group :: PUP r r' a -> PUP r r' a
-group (prnt Indexed.:*: prse) = Print.modify Prettyprinter.group prnt Indexed.:*: prse
-
-nest :: Int -> PUP r r' a -> PUP r r' a
-nest n (prnt Indexed.:*: prse) = Print.modify (Prettyprinter.nest n) prnt Indexed.:*: prse
-
 space1 :: PUP r r ()
 space1 = (Print.tell Prettyprinter.line) Indexed.:*: Indexed.IgnoreIndices Megaparsec.space1
 
