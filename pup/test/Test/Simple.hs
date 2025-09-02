@@ -10,7 +10,6 @@ module Test.Simple
   )
 where
 
-import Combinators
 import Control.Additive ((<|>))
 import Control.Monad
 import Control.Monad.Indexed ((<*), (<*>))
@@ -23,6 +22,7 @@ import GHC.Generics
 import Hedgehog
 import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
+import Test.Simple.Combinators as Combinators
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
 

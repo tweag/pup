@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE QualifiedDo #-}
 
-module Base.Print where
+module Test.Simple.Print where
 
 import Control.Comonad.Traced qualified as Comonad
 import Control.Monad.Indexed qualified as Indexed

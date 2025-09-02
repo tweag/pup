@@ -1,7 +1,7 @@
 {-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Base.Parse where
+module Test.Simple.Parse where
 
 import Control.Applicative
 import Control.Monad

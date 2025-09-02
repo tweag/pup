@@ -2,18 +2,18 @@
 {-# LANGUAGE QualifiedDo #-}
 {-# OPTIONS_GHC -Wno-x-partial #-}
 
-module Combinators where
+module Test.Simple.Combinators where
 
-import Base.Parse (Parse (..))
-import Base.Parse qualified as Parse
-import Base.Print (Print)
-import Base.Print qualified as Print
 import Control.Additive ((<|>))
 import Control.Monad
 import Control.Monad.Indexed ((<*))
 import Control.Monad.Indexed qualified as Indexed
 import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Data.Char qualified as Char
+import Test.Simple.Parse (Parse (..))
+import Test.Simple.Parse qualified as Parse
+import Test.Simple.Print (Print)
+import Test.Simple.Print qualified as Print
 import Prelude hiding (Applicative (..), Monad (..))
 
 type PUP = Print Indexed.:*: Indexed.IgnoreIndices Parse
