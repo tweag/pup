@@ -2,6 +2,16 @@
 {-# LANGUAGE ImpredicativeTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
+-- | This module defines a Megaparsec backend for format descriptors. To that
+-- effect, this module introduces a type class 'MonadParsec' modeled after
+-- Megarparsec's own type class, so that format descriptors can take advantage
+-- of Megaparsec features.
+--
+-- The 'MonadParsec' class in this module isn't exactly the same as the one from
+-- Megaparsec (mainly because it needs to be implementable on pretty-printers as
+-- well). As such, some of the code in this module is similar or identical to
+-- Megaparsec, many of the docstrings are taken directly from Megaparsec as
+-- well.
 module Base.Megaparsec
   ( -- * The parser type class
     MonadParsec (..),
@@ -28,17 +38,20 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Text.Megaparsec qualified as Megaparsec
 
--- | Comments are from 'Megaparsec.MonadParsec'.
+-- | A Megaparsec-style class for format descriptors. Inheriting from
+-- Megaparsec, it is somewhat parsing-oriented.
 --
--- Note: doesn't have the reflection/escape hatch primitives because they aren't
--- implementable for printers. If you need them, you want to act at the parsec
--- level, not the Pup level.
+-- The documentation of individual methods is taken from
+-- 'Megaparsec.MonadParsec'.
+--
+-- Note: some primitive from 'Megaparsec.MonadParsec', in particular
+-- reflection/escape hatch primitives, are omitted from this class because they
+-- aren't implementable for printers. If you need them, you want to act at the
+-- parsec level, not the Pup level.
 class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec e s m | m -> e s where
   -- | Stop parsing and report the 'ParseError'. This is the only way to
   -- control position of the error without manipulating the parser state
   -- manually.
-  --
-  -- @since 8.0.0
   parseError :: Megaparsec.ParseError s e -> m r r' a
 
   -- | The parser @'label' name p@ behaves as parser @p@, but whenever the
@@ -113,8 +126,6 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec
   -- Note that if @r@ fails, the original error message is reported as if
   -- without 'withRecovery'. In no way recovering parser @r@ can influence
   -- error messages.
-  --
-  -- @since 4.4.0
   withRecovery ::
     -- | How to recover from failure
     (Megaparsec.ParseError s e -> m r r' a) ->
@@ -145,9 +156,6 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec
   -- > satisfy f = token testToken Set.empty
   -- >   where
   -- >     testToken x = if f x then Just x else Nothing
-  --
-  -- __Note__: type signature of this primitive was changed in the version
-  -- /7.0.0/.
   token ::
     -- | Matching function for the token to parse
     (Megaparsec.Token s -> Maybe a) ->
@@ -177,9 +185,8 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec
   -- unexpected "abd"
   -- expecting "abc"
   --
-  -- This means, in particular, that it's no longer necessary to use 'try'
-  -- with 'tokens'-based parsers, such as 'Text.Megaparsec.Char.string' and
-  -- 'Text.Megaparsec.Char.string''. This feature /does not/ affect
+  -- This means, in particular, that it's not necessary to use 'try' with
+  -- 'tokens'-based parsers, such as 'chunk'. This feature /does not/ affect
   -- performance in any way.
   tokens ::
     -- | Predicate to check equality of chunks
@@ -197,8 +204,6 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec
   -- > takeWhileP Nothing      f = many (satisfy f)
   --
   -- The combinator never fails, although it may parse the empty chunk.
-  --
-  -- @since 6.0.0
   takeWhileP ::
     -- | Name for a single token in the row
     Maybe String ->
@@ -217,8 +222,6 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec
   --
   -- Note that the combinator either succeeds or fails without consuming any
   -- input, so 'try' is not necessary with it.
-  --
-  -- @since 6.0.0
   takeWhile1P ::
     -- | Name for a single token in the row
     Maybe String ->
@@ -240,8 +243,6 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec
   -- Note that if the combinator fails due to insufficient number of tokens
   -- in the input stream, it backtracks automatically. No 'try' is necessary
   -- with 'takeP'.
-  --
-  -- @since 6.0.0
   takeP ::
     -- | Name for a single token in the row
     Maybe String ->
@@ -262,8 +263,6 @@ class (Megaparsec.Stream s, Indexed.MonadPlus m, Cont2.Stacked m) => MonadParsec
 --
 -- See also: 'token', 'anySingle', 'Text.Megaparsec.Byte.char',
 -- 'Text.Megaparsec.Char.char'.
---
--- @since 7.0.0
 single ::
   (MonadParsec e s m) =>
   -- | Token to match
@@ -286,8 +285,6 @@ single t = token testToken expected id Cont2.@ t
 -- creating a complex parser using the combinators.
 --
 -- See also: 'anySingle', 'anySingleBut', 'oneOf', 'noneOf'.
---
--- @since 7.0.0
 satisfy ::
   (MonadParsec e s m) =>
   -- | Predicate to apply
@@ -304,8 +301,6 @@ satisfy f = token testChar Set.empty id
 -- > anySingle = satisfy (const True)
 --
 -- See also: 'satisfy', 'anySingleBut'.
---
--- @since 7.0.0
 anySingle :: (MonadParsec e s m) => m (Megaparsec.Token s -> r) r (Megaparsec.Token s)
 anySingle = satisfy (const True)
 {-# INLINE anySingle #-}
@@ -316,8 +311,6 @@ anySingle = satisfy (const True)
 -- > anySingleBut t = satisfy (/= t)
 --
 -- See also: 'single', 'anySingle', 'satisfy'.
---
--- @since 7.0.0
 anySingleBut ::
   (MonadParsec e s m) =>
   -- | Token we should not match
@@ -342,8 +335,6 @@ anySingleBut t = satisfy (/= t)
 --
 -- > quoteFast = satisfy (\x -> x == '\'' || x == '\"')
 -- > quoteSlow = oneOf "'\""
---
--- @since 7.0.0
 oneOf ::
   (Foldable f, MonadParsec e s m) =>
   -- | Collection of matching tokens
@@ -364,8 +355,6 @@ oneOf cs = satisfy (\x -> elem x cs)
 --
 -- __Performance note__: prefer 'satisfy' and 'anySingleBut' when you can
 -- because it's faster.
---
--- @since 7.0.0
 noneOf ::
   (Foldable f, MonadParsec e s m) =>
   -- | Collection of taken we should not match
@@ -380,8 +369,6 @@ noneOf cs = satisfy (\x -> notElem x cs)
 --
 -- See also: 'tokens', 'Text.Megaparsec.Char.string',
 -- 'Text.Megaparsec.Byte.string'.
---
--- @since 7.0.0
 chunk ::
   (MonadParsec e s m) =>
   -- | Chunk to match
@@ -397,33 +384,10 @@ infix 0 <?>
 (<?>) = flip label
 {-# INLINE (<?>) #-}
 
--- Probably too low level
--- -- | Return both the result of a parse and a chunk of input that was
--- -- consumed during parsing. This relies on the change of the 'stateOffset'
--- -- value to evaluate how many tokens were consumed. If you mess with it
--- -- manually in the argument parser, prepare for troubles.
--- --
--- -- @since 5.3.0
--- match :: (MonadParsec e s m) => m r r' a -> m r r' (Megaparsec.Tokens s, a)
--- match p = Indexed.do
---   o <- Megaparsec.getOffset
---   s <- Megaparsec.getInput
---   r <- p
---   o' <- Megaparsec.getOffset
---   -- NOTE The 'fromJust' call here should never fail because if the stream
---   -- is empty before 'p' (the only case when 'takeN_' can return 'Nothing'
---   -- as per its invariants), (tp' - tp) won't be greater than 0, and in that
---   -- case 'Just' is guaranteed to be returned as per another invariant of
---   -- 'takeN_'.
---   return ((fst . Maybe.fromJust) (Megaparsec.takeN_ (o' - o) s), r)
--- {-# INLINEABLE match #-}
-
 -- | Consume the rest of the input and return it as a chunk. This parser
 -- never fails, but may return the empty chunk.
 --
 -- > takeRest = takeWhileP Nothing (const True)
---
--- @since 6.0.0
 takeRest :: (MonadParsec e s m) => m (Megaparsec.Tokens s -> r) r (Megaparsec.Tokens s)
 takeRest = takeWhileP Nothing (const True)
 {-# INLINE takeRest #-}
@@ -431,8 +395,6 @@ takeRest = takeWhileP Nothing (const True)
 -- | Return 'True' when end of input has been reached.
 --
 -- > atEnd = option False (True <$ hidden eof)
---
--- @since 6.0.0
 atEnd :: (MonadParsec e s m) => m r r Bool
 atEnd = (True <$ hidden eof) <|> pure False
 {-# INLINE atEnd #-}
