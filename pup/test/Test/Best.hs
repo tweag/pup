@@ -54,7 +54,7 @@ bool =
 --
 -------------------------------------------------------------------------------
 
-roundTrip :: forall m a. (Monad m, Eq a, Show a) => PUP (a -> Maybe (Prettyprinter.Doc ())) (Maybe (Prettyprinter.Doc ())) a -> a -> PropertyT m ()
+roundTrip :: forall m a. (Monad m, Eq a, Show a) => Pup' (a -> Maybe (Prettyprinter.Doc ())) (Maybe (Prettyprinter.Doc ())) a -> a -> PropertyT m ()
 roundTrip pp a = do
   doc <- shouldPrint $ BestPUP.print pp a
   let str = Prettyprinter.renderStrict $ Prettyprinter.layoutPretty Prettyprinter.defaultLayoutOptions doc
@@ -86,7 +86,7 @@ genT = Gen.choice [genC, genD]
     genC = C Prelude.<$> Gen.int (Range.linear 0 100) Prelude.<*> Gen.bool
     genD = D Prelude.<$> Gen.alphaNum Prelude.<*> Gen.bool Prelude.<*> Gen.int (Range.linear 0 100)
 
-uupT :: PUP (T -> r) r T
+uupT :: Pup' (T -> r) r T
 uupT =
   #C <* chunk "C" <* space1 <*> nat <* space1 <*> bool
     <|> #D <* chunk "D" <* space1 <*> anySingle <* space1 <*> bool <* space1 <*> nat
@@ -100,7 +100,7 @@ genU = Gen.frequency [(20, genK), (1, genL)]
     genK = K Prelude.<$> genT Prelude.<*> Gen.int (Range.linear 0 100)
     genL = return L
 
-uupU :: PUP (U -> r) r U
+uupU :: Pup' (U -> r) r U
 uupU =
   #K <* chunk "K" <* space1 <*> uupT <* space1 <*> nat
     <|> #L <* chunk "L"
@@ -144,19 +144,19 @@ data SExpr
   deriving (Generic, Show, Eq)
 
 -- A simple s-expr parser, doesn't handle escaped characters in strings
-sexpr :: PUP (SExpr -> r) r SExpr
+sexpr :: Pup' (SExpr -> r) r SExpr
 sexpr =
   group (nest 2 (#SList <* try (chunk "(") <* space <*> try sexpr `Cont2.sepBy` space1 <* space <* chunk ")"))
     <|> #SSymb <*> try symbol
     <|> #SInt <*> try nat
     <|> #SStr <* try (chunk "\"") <*> takeWhileP Nothing (/= '"') <* chunk "\""
   where
-    symbol :: forall r'. PUP (String -> r') r' String
+    symbol :: forall r'. Pup' (String -> r') r' String
     symbol = lead @":" <*> symbol_lead <*> Cont2.many (try symbol_other)
 
-    symbol_lead :: forall r'. PUP (Char -> r') r' Char
+    symbol_lead :: forall r'. Pup' (Char -> r') r' Char
     symbol_lead = oneOf (':' : ['a' .. 'z'] ++ ['A' .. 'Z'])
-    symbol_other :: forall r'. PUP (Char -> r') r' Char
+    symbol_other :: forall r'. Pup' (Char -> r') r' Char
     symbol_other = oneOf (['a' .. 'z'] ++ ['A' .. 'Z'] ++ ['0' .. '9'] ++ ['-'])
 
 reprintSexpr :: Text -> IO ()

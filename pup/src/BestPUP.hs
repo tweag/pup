@@ -11,19 +11,21 @@ import Text.Megaparsec qualified as Megaparsec
 import Text.Megaparsec.Char qualified as Megaparsec
 import Prelude hiding (Applicative (..), Monad (..), MonadFail (..))
 
-type PUP = Print.PPrint Void () Indexed.:*: Indexed.IgnoreIndices (Megaparsec.Parsec Void Text)
+type Pup err ann = Print.PPrint err ann Indexed.:*: Indexed.IgnoreIndices (Megaparsec.Parsec err Text)
 
-print :: PUP (a -> Maybe (Prettyprinter.Doc ())) (Maybe (Prettyprinter.Doc ())) b -> a -> Maybe (Prettyprinter.Doc ())
+type Pup' = Pup Void ()
+
+print :: Pup err ann (a -> Maybe (Prettyprinter.Doc ann)) (Maybe (Prettyprinter.Doc ann)) b -> a -> Maybe (Prettyprinter.Doc ann)
 print (prnt Indexed.:*: _) = Print.run prnt
 
-parse :: PUP r r' a -> String -> Text -> Either String a
+parse :: (Megaparsec.ShowErrorComponent err) => Pup err ann r r' a -> String -> Text -> Either String a
 parse (_ Indexed.:*: Indexed.IgnoreIndices prse) name input =
   case Megaparsec.runParser prse name input of
     (Left err) -> Left $ Megaparsec.errorBundlePretty err
     (Right a) -> Right a
 
-space1 :: PUP r r ()
+space1 :: Pup' r r ()
 space1 = (Print.tell Prettyprinter.line) Indexed.:*: Indexed.IgnoreIndices Megaparsec.space1
 
-space :: PUP r r ()
+space :: Pup' r r ()
 space = Indexed.pure () Indexed.:*: Indexed.IgnoreIndices Megaparsec.space
