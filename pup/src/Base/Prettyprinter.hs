@@ -1,5 +1,4 @@
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE QualifiedDo #-}
 
 -- | This module defines a "Prettyprinter" backend for format descriptors. To that
