@@ -1,0 +1,19 @@
+-- | This is a placeholder module for documentation and orientation purposes.
+--
+-- Unless you want to make an advanced use of the library, you are only going to
+-- be interested in the pups defined in modules `Text.Pup.X`. Here's a list of
+-- them for quick access (if you notice that the list isn't up to date, don't
+-- hesitate to make a PR):
+--
+-- * "Text.Pup.MPR"
+--
+-- === Termninology
+--
+-- Some terminology used in this repository
+--
+-- * A /format descriptor/ is the representation of a grammar in code. In this
+--   library format descriptors represent both parsers and printers.
+--
+-- * A /pup/ is a concrete type (in particular it's a type) of format descriptor
+--   which provide an interpretation of its elements as parsers and as printers.
+module Text.Pup where

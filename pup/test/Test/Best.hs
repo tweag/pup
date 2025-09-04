@@ -13,10 +13,6 @@ module Test.Best
   )
 where
 
-import Base.Megaparsec
-import Base.Megaparsec.Char
-import Base.Prettyprinter
-import BestPUP
 import Control.Additive ((<|>))
 import Control.Monad hiding (guard)
 import Control.Monad.Indexed ((<*), (<*>))
@@ -24,7 +20,6 @@ import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Control.Monad.Indexed.Cont2.Lead.Generic (lead)
 import Control.Monad.Indexed.Cont2.Lead.Labels ()
 import Data.Maybe qualified as Maybe
-import Data.String qualified as String
 import Data.Text (Text)
 import Data.Text qualified as Text
 import GHC.Generics
@@ -33,7 +28,7 @@ import Hedgehog.Gen qualified as Gen
 import Hedgehog.Range qualified as Range
 import Prettyprinter qualified
 import Prettyprinter.Render.Text qualified as Prettyprinter
-import Text.Megaparsec qualified as Megaparsec
+import Text.Pup.MPR as Pup
 import Prelude hiding (Applicative (..), Monad (..))
 import Prelude qualified
 
@@ -43,10 +38,10 @@ import Prelude qualified
 --
 -------------------------------------------------------------------------------
 
-bool :: (MonadParsec e s m, String.IsString (Megaparsec.Tokens s)) => m (Bool -> r) r Bool
+bool :: Pup' (Bool -> r) r Bool
 bool =
-  #True <* chunk "True"
-    <|> #False <* chunk "False"
+  #True <* "True"
+    <|> #False <* "False"
 
 -------------------------------------------------------------------------------
 --
@@ -56,10 +51,10 @@ bool =
 
 roundTrip :: forall m a. (Monad m, Eq a, Show a) => Pup' (a -> Maybe (Prettyprinter.Doc ())) (Maybe (Prettyprinter.Doc ())) a -> a -> PropertyT m ()
 roundTrip pp a = do
-  doc <- shouldPrint $ BestPUP.print pp a
+  doc <- shouldPrint $ Pup.print pp a
   let str = Prettyprinter.renderStrict $ Prettyprinter.layoutPretty Prettyprinter.defaultLayoutOptions doc
   Hedgehog.annotate $ "The printed doc: " ++ (Text.unpack $ str)
-  BestPUP.parse pp "<test>" str `shouldParseTo` a
+  Pup.parse pp "<test>" str `shouldParseTo` a
   where
     shouldPrint :: forall x. Maybe x -> PropertyT m x
     shouldPrint (Just x) = return x
@@ -88,8 +83,8 @@ genT = Gen.choice [genC, genD]
 
 uupT :: Pup' (T -> r) r T
 uupT =
-  #C <* chunk "C" <* space1 <*> nat <* space1 <*> bool
-    <|> #D <* chunk "D" <* space1 <*> anySingle <* space1 <*> bool <* space1 <*> nat
+  #C <* "C" <* space1 <*> nat <* space1 <*> bool
+    <|> #D <* "D" <* space1 <*> anySingle <* space1 <*> bool <* space1 <*> nat
 
 data U = K T Int | L
   deriving (Show, Generic, Eq)
@@ -102,8 +97,8 @@ genU = Gen.frequency [(20, genK), (1, genL)]
 
 uupU :: Pup' (U -> r) r U
 uupU =
-  #K <* chunk "K" <* space1 <*> uupT <* space1 <*> nat
-    <|> #L <* chunk "L"
+  #K <* "K" <* space1 <*> uupT <* space1 <*> nat
+    <|> #L <* "L"
 
 prop_round_trip_Bool :: Property
 prop_round_trip_Bool = property $ do
@@ -146,10 +141,10 @@ data SExpr
 -- A simple s-expr parser, doesn't handle escaped characters in strings
 sexpr :: Pup' (SExpr -> r) r SExpr
 sexpr =
-  group (nest 2 (#SList <* try (chunk "(") <* space <*> try sexpr `Cont2.sepBy` space1 <* space <* chunk ")"))
+  group (nest 2 (#SList <* try ("(") <* space <*> try sexpr `Cont2.sepBy` space1 <* space <* ")"))
     <|> #SSymb <*> try symbol
     <|> #SInt <*> try nat
-    <|> #SStr <* try (chunk "\"") <*> takeWhileP Nothing (/= '"') <* chunk "\""
+    <|> #SStr <* try ("\"") <*> takeWhileP Nothing (/= '"') <* "\""
   where
     symbol :: forall r'. Pup' (String -> r') r' String
     symbol = lead @":" <*> symbol_lead <*> Cont2.many (try symbol_other)
@@ -164,7 +159,7 @@ reprintSexpr str = do
   case parse sexpr "<test>" str of
     Left e -> putStrLn e
     Right expr -> do
-      let doc = Maybe.fromJust (BestPUP.print sexpr expr)
+      let doc = Maybe.fromJust (Pup.print sexpr expr)
       let str' = Prettyprinter.renderStrict $ Prettyprinter.layoutPretty Prettyprinter.defaultLayoutOptions doc
       putStrLn $ Text.unpack str'
   putStrLn ""

@@ -3,7 +3,7 @@
 
 -- | Format descriptors specialised to the token type 'Char'. See also
 -- "Text.Megaparsec.Char".
-module Base.Megaparsec.Char
+module Text.Pup.Class.Char
   ( -- * Numbers
     digit,
     digitChar,
@@ -19,25 +19,24 @@ module Base.Megaparsec.Char
   )
 where
 
-import Base.Megaparsec
 import Control.Monad.Indexed qualified as Indexed
 import Control.Monad.Indexed.Cont2 qualified as Cont2
 import Data.Char qualified as Char
-import Text.Megaparsec qualified as Megaparsec
+import Text.Pup.Backend.Megaparsec
 import Text.Read qualified as Read
 import Prelude hiding (read)
 import Prelude qualified
 
 -- | Type constrainted version of 'single'
-char :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => Char -> m r r Char
+char :: (Tokens Char chunk m) => Char -> m r r Char
 char = single
 
 -- | Type constrainted version of 'anyChar'
-anyChar :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Char -> r) r Char
+anyChar :: (Tokens Char chunk m) => m (Char -> r) r Char
 anyChar = anySingle
 
 -- | Decimal digit. To manipulate the raw 'Char' instead, use 'digitChar'.
-digit :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
+digit :: (Cont2.Stacked m, Indexed.Monad m, Tokens Char chunk m) => m (Int -> r) r Int
 digit = Indexed.do
   Cont2.shift_ $ \k fl -> Indexed.pure $ \i -> if 0 <= i && i < 10 then k fl i else fl i
   Cont2.shift_ $ \k fl -> Indexed.pure $ \i -> k (\_ -> fl i) (Char.intToDigit i)
@@ -46,13 +45,13 @@ digit = Indexed.do
 
 -- | A 'Char' standing for a decimal digit. You can return the digit at an 'Int'
 -- with 'digit'.
-digitChar :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Char -> r) r Char
-digitChar = Indexed.do
+digitChar :: (Tokens Char chunk m) => m (Char -> r) r Char
+digitChar =
   satisfy Char.isDigit <?> "decimal digit"
 
 -- | A (maximal) sequence of decimal digits interpreted as a natural number
-nat :: (MonadParsec e s m, Megaparsec.Token s ~ Char) => m (Int -> r) r Int
-nat = Indexed.do
+nat :: (Cont2.Stacked m, Indexed.Alternative m, Tokens Char chunk m) => m (Int -> r) r Int
+nat =
   read Indexed.<*> Cont2.some digitChar
 
 -- | A total lead based using 'Prelude.read' and 'show' for the respective directions.
@@ -61,7 +60,7 @@ nat = Indexed.do
 -- the 'read' descriptor will fail with 'error'.
 --
 -- For a format descriptor capable of failing with a parse error, see 'readM'.
-read :: (Indexed.Monad m, Cont2.Stacked m, Read a, Show a) => m (a -> r) (String -> r) (String -> a)
+read :: (Indexed.Applicative m, Cont2.Stacked m, Read a, Show a) => m (a -> r) (String -> r) (String -> a)
 read = Indexed.do
   Cont2.stack (\_fl k a -> k (show a)) (\k s -> k (Prelude.read s))
   Indexed.pure Prelude.read
