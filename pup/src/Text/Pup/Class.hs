@@ -35,6 +35,9 @@ module Text.Pup.Class
     -- * Look-ahead descriptors
     LookAhead (..),
 
+    -- * Semantic tagging
+    Annotations (..),
+
     -- * Parse errors
     ParseErrors (..),
 
@@ -320,6 +323,20 @@ instance (LookAhead m1, LookAhead m2) => LookAhead (m1 Indexed.:*: m2) where
 instance (Indexed.Applicative m, Cont2.Shifty m) => LookAhead (Trivial m) where
   lookAhead _ = Cont2.pop
   notFollowedBy _ = Indexed.pure ()
+
+-- | This class represents semantic tagging for printers. For instance,
+-- instructions to add colour or font styles which may not be available in all
+-- backends. A pup is `'Annotate' ann` when it supports tags of type `ann`'.
+--
+-- See also "Prettyprinter.annotate".
+class Annotations ann m where
+  annotate :: ann -> m r r' a -> m r r' a
+
+instance (Annotations ann m1, Annotations ann m2) => Annotations ann (m1 Indexed.:*: m2) where
+  annotate ann (a Indexed.:*: b) = annotate ann a Indexed.:*: annotate ann b
+
+instance Annotations ann (Trivial m) where
+  annotate _ = id
 
 -- | A class for error handling in parsers.
 class ParseErrors e m where

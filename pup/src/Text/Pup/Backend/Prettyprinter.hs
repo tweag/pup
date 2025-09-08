@@ -109,3 +109,6 @@ instance WadlerLeijen (Backend ann) where
   group = modify Prettyprinter.group
 
   nest n = modify (Prettyprinter.nest n)
+
+instance Annotations ann (Backend ann) where
+  annotate ann = modify (Prettyprinter.annotate ann)
