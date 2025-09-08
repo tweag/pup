@@ -1,6 +1,14 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE QualifiedDo #-}
 
+-- | This module defines a pup with a
+-- [Megaparsec](https://hackage.haskell.org/package/megaparsec) backend for the
+-- parser side and a
+-- [Prettyprinter](https://hackage.haskell.org/package/prettyprinter) backend
+-- for the parser.
+--
+-- Start with 'Pup'' if you don't have any advanced need, change to the more
+-- general 'Pup' if you want pretty-printing annotations or custom parse error.
 module Text.Pup.MPR
   ( -- * A simple pup to get you started
     Pup',
