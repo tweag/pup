@@ -83,6 +83,8 @@ instance (Megaparsec.MonadParsec err s m, Megaparsec.Token s ~ Char) => Breaks (
 
 deriving via (Trivial (BackendGen m)) instance (Megaparsec.MonadParsec err s m, Megaparsec.Token s ~ Char) => WadlerLeijen (BackendGen m)
 
+deriving via (Trivial (BackendGen m)) instance Annotations ann (BackendGen m)
+
 instance (Megaparsec.MonadParsec err s m) => LookAhead (BackendGen m) where
   lookAhead (MkBackend (Indexed.IgnoreIndices a)) = MkBackend . Indexed.IgnoreIndices $ Megaparsec.lookAhead a
   notFollowedBy (MkBackend (Indexed.IgnoreIndices a)) = MkBackend . Indexed.IgnoreIndices $ Megaparsec.notFollowedBy a

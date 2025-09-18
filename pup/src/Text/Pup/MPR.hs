@@ -56,7 +56,8 @@ newtype Pup err ann r r' a = MkPup ((Print.Backend ann Indexed.:*: Megaparsec.Ba
       WadlerLeijen,
       LookAhead,
       ParseErrors (Text.Megaparsec.ParseError Text err),
-      Megaparsec.MonadParsec Text
+      Megaparsec.MonadParsec Text,
+      Annotations ann
     )
 
 deriving newtype instance Applicative (Pup err ann r r)
