@@ -1,19 +1,39 @@
--- | This is a placeholder module for documentation and orientation purposes.
---
--- Unless you want to make an advanced use of the library, you are only going to
--- be interested in the pups defined in modules `Text.Pup.X`. Here's a list of
--- them for quick access (if you notice that the list isn't up to date, don't
--- hesitate to make a PR):
---
--- * "Text.Pup.MPR"
+-- | The Pup library defines combinators to write format descriptor which
+-- represent both a parser and a printer in a single definition. This is module
+-- is your starting point, especially if you are new to the library. It doesn't
+-- contain code, only documentation. Read on to find your way through the
+-- library.
 --
 -- === Termninology
 --
--- Some terminology used in this repository
+-- Some terminology used in the Pup library
 --
 -- * A /format descriptor/ is the representation of a grammar in code. In this
 --   library format descriptors represent both parsers and printers.
 --
 -- * A /pup/ is a concrete type (in particular it's a type) of format descriptor
 --   which provide an interpretation of its elements as parsers and as printers.
+--
+-- === Orientation
+--
+-- For an overview of the combinators typically available for a pup see the
+-- "Text.Pup.Class" and "Text.Pup.Class.Char" modules. Combinators for a given
+-- Pup are given by instantiating some or all of the type classes in
+-- "Text.Pup.Class". You shouldn't have to import these modules though as they
+-- are re-exported by modules defining pups.
+--
+-- The typical way to use the Pup library is to import a module for a given Pup
+-- from a Text.Pup.X module. Here's a list of the modules defining pups for
+-- quick access (if you notice that the list isn't up to date, don't hesitate to
+-- make a PR):
+--
+-- * "Text.Pup.MPR"
+--
+-- You'll also need to import the relevant modules from the Stacked library.
+-- Optionally, we recommended turning on `OverloadedLabels` and importing
+-- "Control.Monad.Indexed.Cont2.Lead.Labels" from the Stacked library. This lets
+-- you write format descriptors like
+--
+-- >     #C <* int
+-- > <|> #D <* bool <* space1 <*> int
 module Text.Pup where
