@@ -4,7 +4,7 @@
 -- contain code, only documentation. Read on to find your way through the
 -- library.
 --
--- === Termninology
+-- == Termninology
 --
 -- Some terminology used in the Pup library
 --
@@ -14,7 +14,7 @@
 -- * A /pup/ is a concrete type (in particular it's a type) of format descriptor
 --   which provide an interpretation of its elements as parsers and as printers.
 --
--- === Orientation
+-- == Orientation
 --
 -- For an overview of the combinators typically available for a pup see the
 -- "Text.Pup.Class" and "Text.Pup.Class.Char" modules. Combinators for a given
@@ -22,18 +22,29 @@
 -- "Text.Pup.Class". You shouldn't have to import these modules though as they
 -- are re-exported by modules defining pups.
 --
+-- You will also want to read the "Control.Monad.Indexed.Cont2.Lead.Generic"
+-- module from the Stacked library to see how to use constructors in the stacked
+-- applicative/monad abstraction which is at the root of the Pup library.
+--
 -- The typical way to use the Pup library is to import a module for a given Pup
 -- from a Text.Pup.X module. Here's a list of the modules defining pups for
 -- quick access (if you notice that the list isn't up to date, don't hesitate to
 -- make a PR):
 --
--- * "Text.Pup.MPR"
+-- * Megaparsec & Prettyprinter: "Text.Pup.MPR"
 --
 -- You'll also need to import the relevant modules from the Stacked library.
 -- Optionally, we recommended turning on `OverloadedLabels` and importing
 -- "Control.Monad.Indexed.Cont2.Lead.Labels" from the Stacked library. This lets
 -- you write format descriptors like
 --
--- >     #C <* int
+-- > #C <* int
 -- > <|> #D <* bool <* space1 <*> int
+--
+-- == Further readings
+--
+-- * Our article /Invertible Syntax without the Tuples/ (published version
+--   (TBA), [extended version with
+--   appendices](https://arxiv.org/abs/2508.09856)) described in some depth the
+--   theory behind the Pup library.
 module Text.Pup where

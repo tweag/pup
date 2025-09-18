@@ -54,7 +54,7 @@ import Data.Functor
 -- | This class declares the basic format descriptors for tokens (what the
 -- theory of grammars call terminals).
 class (Eq tok, Eq chunk) => Tokens tok chunk m | m -> tok chunk where
-  -- | This parser only succeeds at the end of input.
+  -- | As a parser, only succeeds at the end of input. No-op as a printer.
   eof :: m r r ()
 
   -- | As a parser, @'single' t@ only matches the single token @t@. As a
@@ -95,7 +95,7 @@ class (Eq tok, Eq chunk) => Tokens tok chunk m | m -> tok chunk where
   -- predicate holds. As a printer, prints its input chunk of tokens, provided
   -- that each token in the chunk satisfies the predicate.
   --
-  -- This is an optimised variant of parsers built with
+  -- This is an optimised variant of a format descriptor built with
   -- 'Control.Monad.Indexed.Cont2.many':
   --
   -- > takeWhileP (Just "foo") f = many (satisfy f <?> "foo")
@@ -112,7 +112,7 @@ class (Eq tok, Eq chunk) => Tokens tok chunk m | m -> tok chunk where
   -- | Similar to 'takeWhileP', but fails if it can't parse or print at least one
   -- token.
   --
-  -- This is an optimised variant of parsers built with
+  -- This is an optimised variant of a format descriptor built with
   -- 'Control.Monad.Indexed.Cont2.some':
   --
   -- > takeWhile1P (Just "foo") f = some (satisfy f <?> "foo")
@@ -225,8 +225,9 @@ chunk ::
 chunk s = void $ tokens (==) s Cont2.@ s
 {-# INLINE chunk #-}
 
--- | Consume the rest of the input and return it as a chunk. This parser
--- never fails, but may return the empty chunk.
+-- | As a parser, consume the rest of the input and return it as a chunk. As a parser
+-- 'takeRest' never fails, but may return the empty chunk. As a printer,
+-- 'takeRest' simply prints its input chunk.
 --
 -- > takeRest = takeWhileP Nothing (const True)
 takeRest :: (Tokens tok chunk m) => m (chunk -> r) r chunk
