@@ -3,6 +3,7 @@ spec-version: 0.36.0
 name:                pup
 version:             0.1.0
 synopsis:            "Invertible format descriptors"
+description:         "Please see README.md."
 author:              ["Arnaud Spiwack"]
 maintainer:          arnaud.spiwack@tweag.io
 
