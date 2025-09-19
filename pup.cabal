@@ -33,11 +33,10 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base
+      base >=4.19 && <4.22
     , comonad
     , containers
     , megaparsec
-    , mtl
     , prettyprinter
     , stacked
     , text
@@ -56,7 +55,7 @@ test-suite all
       test
   ghc-options: -Wall
   build-depends:
-      base
+      base >=4.19 && <4.22
     , comonad
     , containers
     , hedgehog
