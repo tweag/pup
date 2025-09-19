@@ -65,7 +65,7 @@ library is indebted; the definition of “unparsing” is nebulous but it can be
 understood a pretty-printing).
 
 But this library is also meant to build upon the prior work of, and be a more
-practical version of, the [Cassette] library. Cassette is sometimes styised as
+practical version of, the [Cassette] library. Cassette is sometimes stylised as
 K7 (after the French pronunciation of both words). And pups are K9.
 
 Now you know.
