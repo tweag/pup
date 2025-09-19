@@ -1,4 +1,7 @@
 resolver: lts-23.17
 packages:
-  - stacked
-  - pup
+  - .
+
+extra-deps:
+  - github: tweag/stacked
+    commit: 08a962df524bd34b4e217686e34b7c013a5f9ab4

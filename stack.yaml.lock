@@ -3,7 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    name: stacked
+    pantry-tree:
+      sha256: 577978f6fec24747da58dc46cdf12dc2f13cad2d3a73cc560916f3fd01133780
+      size: 1175
+    sha256: b3da9be25f8be3d7b02edeaa0c93e1bd91fa746aadbf50f89b2a75dcb1e91b3d
+    size: 15205
+    url: https://github.com/tweag/stacked/archive/08a962df524bd34b4e217686e34b7c013a5f9ab4.tar.gz
+    version: 0.1.0
+  original:
+    url: https://github.com/tweag/stacked/archive/08a962df524bd34b4e217686e34b7c013a5f9ab4.tar.gz
 snapshots:
 - completed:
     sha256: 2763632e4c4094ce12f5ae12b22f524cdc6453b6b19007ff164a37fd9d2ea829
