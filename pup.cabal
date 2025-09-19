@@ -20,7 +20,6 @@ build-type:     Simple
 source-repository head
   type: git
   location: https://github.com/tweag/pup
-  subdir: pup
 
 library
   exposed-modules:

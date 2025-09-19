@@ -7,7 +7,7 @@ description:         "Please see README.md."
 author:              ["Arnaud Spiwack"]
 maintainer:          arnaud.spiwack@tweag.io
 
-github: tweag/pup/pup
+github: tweag/pup
 copyright: "(c) Modus Create LLC and its affiliates"
 
 language: GHC2021
