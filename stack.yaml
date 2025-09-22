@@ -3,5 +3,4 @@ packages:
   - .
 
 extra-deps:
-  - github: tweag/stacked
-    commit: 08a962df524bd34b4e217686e34b7c013a5f9ab4
+  - stacked-0.1.0
