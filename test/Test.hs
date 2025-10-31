@@ -21,5 +21,6 @@ main = do
   Simple.reprintSexpr Simple.a_sexpr
   putStrLn "== Visualise megaparsec/prettyprinter PUP =="
   Best.reprintSexpr Best.a_small_sexpr
+  Best.reprintSexpr Best.a_medium_sexpr
   Best.reprintSexpr Best.a_sexpr
   Hedgehog.defaultMain [Simple.tests, Best.tests]
