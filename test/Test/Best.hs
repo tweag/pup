@@ -10,6 +10,7 @@ module Test.Best
     reprintSexpr,
     a_small_sexpr,
     a_sexpr,
+    a_medium_sexpr,
   )
 where
 
@@ -166,6 +167,11 @@ reprintSexpr str = do
 
 a_small_sexpr :: Text
 a_small_sexpr = "((abstr 57 :tag) \"this is nested\")"
+
+a_medium_sexpr :: Text
+a_medium_sexpr =
+  "((a-fun 57 :tag) \"a string\" (list 1 \"somewhat\" :long \"list of mixed types\"\
+  \ (list \"at least\" 3) (list \"but maybe\" :more)))"
 
 -- Modified Emacs Lisp
 a_sexpr :: Text
