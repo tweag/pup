@@ -30,7 +30,8 @@ A Pup format descriptor for the same type could look like
 <|> #D <* chunk "D" <* space1 <*> anySingle <* space1 <*> bool <* space1 <*> int
 ```
 
-But the Pup descriptor can pretty-print in addition to parse.
+But the Pup descriptor can pretty-print in addition to parse. See also [our
+introductory blog post][blog-post].
 
 ## Some underlying principles
 
@@ -72,6 +73,7 @@ Now you know.
 
 [functional-unparsing-paper]: https://www.cambridge.org/core/journals/journal-of-functional-programming/article/functional-unparsing/789945109AD2AB168B504472E6B786A0
 [Cassette]: https://github.com/mboes/cassette/
+[blog-post]: https://www.tweag.io/blog/2026-01-08-grammar-combinators/
 [paper]: https://dl.acm.org/doi/10.1145/3759427.3760381
 [paper-extended]: https://arxiv.org/abs/2508.09856
 [Megaparsec]: https://hackage.haskell.org/package/megaparsec
